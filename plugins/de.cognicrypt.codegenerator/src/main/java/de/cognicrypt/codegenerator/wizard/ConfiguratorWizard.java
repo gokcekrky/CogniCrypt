@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -26,6 +27,7 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModel;
 import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModelUtils;
 import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.generator.CodeGenerator;
+import de.cognicrypt.codegenerator.generator.CrySLBasedCodeGenerator;
 import de.cognicrypt.codegenerator.generator.XSLBasedGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
 import de.cognicrypt.codegenerator.question.ClaferDependency;
@@ -354,6 +356,23 @@ public class ConfiguratorWizard extends Wizard {
 		ret &= codeGenerator.generateCodeTemplates(
 			new Configuration(instance, this.constraints, developerProject.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile),
 			selectedTask.getAdditionalResources());
+
+		String[] rules = { "AlgorithmParameters", "Cipher", "DHGenParameterSpec", "DHParameterSpec", "DSAGenParameterSpec", "DSAParameterSpec", "GCMParameterSpec", "HMACParameterSpec", "IvParameterSpec", "KeyGenerator", "KeyPair", "KeyPairGenerator", "KeyStore", "Mac", "MessageDigest", "PBEKeySpec", "PBEParameterSpec", "RSAKeyGenParameterSpec", "SecretKey", "SecretKeyFactory", "SecretKeySpec", "SecureRandom", "Signature" };
+		//String[] rules = { "DHGenParameterSpec", "DHParameterSpec"};
+		//String[] rules = { "KeyGenerator" };
+		//String[] rules = { "HMACParameterSpec" };
+		//String[] rules = { "KeyGenerator", "Cipher" };
+		//String[] rules = { "SecureRandom" };
+
+		for (String ruleName : rules) {
+			try {
+				CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), ruleName);
+				codeGeneratorNew.next();
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, "Code generation for rule " + ruleName + " failed");
+			}
+		}
+
 		return ret;
 	}
 

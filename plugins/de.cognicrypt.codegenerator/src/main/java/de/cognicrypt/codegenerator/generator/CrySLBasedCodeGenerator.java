@@ -27,9 +27,10 @@ import typestate.interfaces.ISLConstraint;
 
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
-	protected CrySLBasedCodeGenerator(IProject targetProject) throws Exception {
+	public CrySLBasedCodeGenerator(IProject targetProject, String ruleName) throws Exception {
 		super(targetProject);
 
+		//		rule = CrySLModelReader.getCryptSLRule(ruleName);
 		// Determine class name
 		usedClass = rule.getClassName();
 		newClass = usedClass + "Provider";
@@ -42,7 +43,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 	@Override
 	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
@@ -100,7 +100,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * Contains all parameters that cannot be replaced by a final value. These parameters are added as method parameters for the super method "use()".
 	 */
 	private ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
-
 
 	/**
 	 * Second constructor version
