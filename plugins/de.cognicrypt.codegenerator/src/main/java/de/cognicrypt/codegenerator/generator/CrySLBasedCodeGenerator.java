@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IProject;
 
+import crypto.interfaces.ISLConstraint;
 import crypto.rules.CryptSLConstraint;
 import crypto.rules.CryptSLConstraint.LogOps;
 import crypto.rules.CryptSLMethod;
@@ -23,14 +24,14 @@ import crypto.rules.CryptSLValueConstraint;
 import crypto.rules.StateMachineGraph;
 import crypto.rules.TransitionEdge;
 import de.cognicrypt.codegenerator.wizard.Configuration;
-import typestate.interfaces.ISLConstraint;
+import de.cognicrypt.crysl.reader.CrySLModelReader;
 
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 	public CrySLBasedCodeGenerator(IProject targetProject, String ruleName) throws Exception {
 		super(targetProject);
 
-		//		rule = CrySLModelReader.getCryptSLRule(ruleName);
+		rule = CrySLModelReader.getCryptSLRule(ruleName);
 		// Determine class name
 		usedClass = rule.getClassName();
 		newClass = usedClass + "Provider";

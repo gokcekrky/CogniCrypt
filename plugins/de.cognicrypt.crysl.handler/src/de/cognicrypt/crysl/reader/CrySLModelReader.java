@@ -10,6 +10,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -88,6 +89,7 @@ import de.darmstadt.tu.crossing.cryptSL.impl.ObjectImpl;
 
 public class CrySLModelReader {
 
+	public static Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
 	private List<CryptSLForbiddenMethod> forbiddenMethods = null;
 	private StateMachineGraph smg = null;
 	private String curClass = "";
@@ -160,6 +162,7 @@ public class CrySLModelReader {
 			System.out.println("");
 
 			storeRuletoFile(rule, Utils.getResourceFromWithin("resources/CrySLRules").getAbsolutePath(), className);
+			rules.put(className, rule);
 
 			final String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
 			if ((new File(filePath)).exists()) {
@@ -566,6 +569,25 @@ public class CrySLModelReader {
 
 		} catch (IOException | ClassNotFoundException e) {
 			Activator.getDefault().logError(e);
+		}
+	}
+
+	/**
+	 * Returns the cryptsl rule with the name that is defined by the method parameter cryptslRule.
+	 * 
+	 * @param cryptslRule
+	 *        Name of cryptsl rule that should by returend.
+	 * 
+	 * @return Returns the cryptsl rule with the name that is defined by the parameter cryptslRule.
+	 * @throws Exception
+	 *         Thows an exception if given rule name does not exist.
+	 */
+	public static CryptSLRule getCryptSLRule(String cryptslRule) throws Exception {
+		if (rules.containsKey(cryptslRule)) {
+			return rules.get(cryptslRule);
+		} else {
+			// TODO: Create own exception.
+			throw new Exception("Rules does not exist.");
 		}
 	}
 
