@@ -36,7 +36,7 @@ public class JavaCodeFile {
 	 * 
 	 * @throws Exception
 	 */
-	public File writeToDisk() throws Exception {
+	public File writeToDisk(final String filePath) throws Exception {
 
 		StringBuilder stringBuilder = new StringBuilder();
 
@@ -72,7 +72,6 @@ public class JavaCodeFile {
 			e.printStackTrace();
 		}
 
-		final String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
 		try (FileOutputStream fileOutputStream = new FileOutputStream(filePath + javaCodeFile)) {
 			fileOutputStream.write(document.get().getBytes());
 		} catch (Exception e) {
@@ -80,7 +79,6 @@ public class JavaCodeFile {
 		}
 
 		return javaCodeFile;
-
 	}
 
 	/**

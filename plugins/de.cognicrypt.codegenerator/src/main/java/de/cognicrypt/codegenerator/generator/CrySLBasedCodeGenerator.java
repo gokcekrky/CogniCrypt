@@ -1,6 +1,8 @@
 package de.cognicrypt.codegenerator.generator;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -23,88 +25,15 @@ import crypto.rules.CryptSLSplitter;
 import crypto.rules.CryptSLValueConstraint;
 import crypto.rules.StateMachineGraph;
 import crypto.rules.TransitionEdge;
+import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.codegenerator.wizard.Configuration;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.cognicrypt.utils.Utils;
 
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
-	public CrySLBasedCodeGenerator(IProject targetProject, String ruleName) throws Exception {
-		super(targetProject);
-
-		rule = CrySLModelReader.getCryptSLRule(ruleName);
-		// Determine class name
-		usedClass = rule.getClassName();
-		newClass = usedClass + "Provider";
-
-		// initialise code generator
-		init();
-
-		// TODO Auto-generated constructor stub
-	}
-
-	@Override
-	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
-		return false;
-	}
+	public static Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
 
 	/**
-	 * Iterator over all possible transitions that describe the source code of the given rule.
-	 */
-	private Iterator<List<TransitionEdge>> transitions;
-
-	/**
-	 * Object of the parsed rule.
-	 */
-	private CryptSLRule rule;
-
-	/**
-	 * Class name of the new generated Java class.
-	 */
-	private String newClass;
-
-	/**
-	 * Method name that is used in the new generated Java class.
-	 */
-	private String newMethod = "VALUE_IS_NOT_SET";
-
-	/**
-	 * Name of the Java class that is used in the generated Java code.
-	 */
-	private String usedClass;
-
-	/**
-	 * Hash table to store the values that are assigend to variables.
-	 */
-	Hashtable<String, String> parameterValues = new Hashtable<String, String>();
-
-	/**
-	 * Name of instance that is used for method invocations
-	 */
-	private String instanceName = "";
-
-	/**
-	 * Contains the import instructions that are needed for the generated code.
-	 */
-	private ArrayList<String> imports = new ArrayList<String>();
-
-	/**
-	 * Contains the exceptions classes that are thrown by the generated code.
-	 */
-	private ArrayList<String> exceptions = new ArrayList<String>();
-
-	/**
-	 * Contains all method invocations that are executed by an API-Rule.
-	 */
-	private ArrayList<String> methodInvocations = new ArrayList<String>();
-
-	/**
-	 * Contains all parameters that cannot be replaced by a final value. These parameters are added as method parameters for the super method "use()".
-	 */
-	private ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
-
-	/**
-	 * Second constructor version
-	 * 
 	 * This constructor allows it to set a specific class and method names that are used in the generated Java code.
 	 * 
 	 * @param cryptslRule
@@ -115,71 +44,43 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 *        Method name that is usd for the generated Java code
 	 * @throws Exception
 	 */
-	//	public CodeGenerator(String cryptslRule, String className, String methodName) throws Exception {
-	//		// load cryptsl rule
-	//		rule = CrySLModelReader.getCryptSLRule(cryptslRule);
-	//
-	//		// Determine class name
-	//		usedClass = rule.getClassName();
-	//		newClass = className;
-	//
-	//		// TODO prove if the given name is an appropriate 
-	//		// java method identifier.
-	//		// If not. Do not store the value.
-	//		newMethod = methodName;
-	//
-	//		// initialise code generator
-	//		init();
-	//	}
 
-	/**
-	 * This method initialises the a new CodeGenerator object and is invoked by the constructor.
-	 * 
-	 * @throws Exception
-	 */
-	private void init() throws Exception {
-		// get state machine of cryptsl rule
-		StateMachineGraph stateMachine = rule.getUsagePattern();
+	public CrySLBasedCodeGenerator(IProject targetProject, String ruleName) throws Exception {
+		super(targetProject);
 
-		// analyse state machine
-		StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
-		ArrayList<List<TransitionEdge>> transitionsList = stateMachineGraphAnalyser.getTransitions();
+		rule = getCryptSLRule(ruleName);
+		// Determine class name
+		usedClass = rule.getClassName();
+		newClass = usedClass + "Provider";
 
-		// sort paths by number of nodes
-		transitionsList.sort(new Comparator<List<TransitionEdge>>() {
+		// initialise code generator
+		init();
 
-			@Override
-			public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
-				return Integer.compare(element1.size(), element2.size());
-			}
-		});
-
-		this.transitions = transitionsList.iterator();
 	}
 
 	/**
-	 * The method hasNext() returns true if it exists a further variation of code that describes the given API-rule.
+	 * Returns the cryptsl rule with the name that is defined by the method parameter cryptslRule.
 	 * 
-	 * @return true, if it exists a further variation of code that describes the given API-rule, otherwise false.
+	 * @param cryptslRule
+	 *        Name of cryptsl rule that should by returend.
+	 * 
+	 * @return Returns the cryptsl rule with the name that is defined by the parameter cryptslRule.
+	 * @throws Exception
+	 *         Thows an exception if given rule name does not exist.
 	 */
-	public boolean hasNext() {
-		return this.transitions.hasNext();
+	public static CryptSLRule getCryptSLRule(String cryptslRule) throws Exception {
+		final FileInputStream fileIn = new FileInputStream(Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID)
+			.getAbsolutePath() + "\\" + cryptslRule + ".cryptslbin");
+		final ObjectInputStream in = new ObjectInputStream(fileIn);
+		CryptSLRule rule = (CryptSLRule) in.readObject();
+		in.close();
+		fileIn.close();
+		return rule;
 	}
 
-	/**
-	 * The method next() returns one possible version of java code that describes the given rule.
-	 * 
-	 * @return Array of File objects that contain Java code that is described by the given cryptsl rule
-	 * @throws Exception
-	 *         <ul>
-	 *         <li>Sequence of methods cannot be determined.</li>
-	 * 
-	 *         </ul>
-	 */
-	public File[] next() throws Exception {
-
+	@Override
+	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
 		File[] codeFileList;
-
 		boolean next = true;
 
 		do {
@@ -280,8 +181,14 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 			// compile code
 			// ################################################################
-			File[] codeFiles = { javaCodeFile.writeToDisk() };
-			codeFileList = codeFiles;
+			String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
+			File codeFile = null;
+			try {
+				codeFile = javaCodeFile.writeToDisk(filePath);
+			} catch (Exception e) {
+				Activator.getDefault().logError(e);
+			}
+			codeFileList = new File[] { codeFile };
 
 			// TODO
 			// Compiling is enabled for testing
@@ -295,7 +202,96 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 		} while (next);
 
-		return codeFileList;
+		return codeFileList != null;
+	}
+
+	/**
+	 * Iterator over all possible transitions that describe the source code of the given rule.
+	 */
+	private Iterator<List<TransitionEdge>> transitions;
+
+	/**
+	 * Object of the parsed rule.
+	 */
+	private CryptSLRule rule;
+
+	/**
+	 * Class name of the new generated Java class.
+	 */
+	private String newClass;
+
+	/**
+	 * Method name that is used in the new generated Java class.
+	 */
+	private String newMethod = "VALUE_IS_NOT_SET";
+
+	/**
+	 * Name of the Java class that is used in the generated Java code.
+	 */
+	private String usedClass;
+
+	/**
+	 * Hash table to store the values that are assigend to variables.
+	 */
+	Hashtable<String, String> parameterValues = new Hashtable<String, String>();
+
+	/**
+	 * Name of instance that is used for method invocations
+	 */
+	private String instanceName = "";
+
+	/**
+	 * Contains the import instructions that are needed for the generated code.
+	 */
+	private ArrayList<String> imports = new ArrayList<String>();
+
+	/**
+	 * Contains the exceptions classes that are thrown by the generated code.
+	 */
+	private ArrayList<String> exceptions = new ArrayList<String>();
+
+	/**
+	 * Contains all method invocations that are executed by an API-Rule.
+	 */
+	private ArrayList<String> methodInvocations = new ArrayList<String>();
+
+	/**
+	 * Contains all parameters that cannot be replaced by a final value. These parameters are added as method parameters for the super method "use()".
+	 */
+	private ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
+
+	/**
+	 * This method initialises the a new CodeGenerator object and is invoked by the constructor.
+	 * 
+	 * @throws Exception
+	 */
+	private void init() throws Exception {
+		// get state machine of cryptsl rule
+		StateMachineGraph stateMachine = rule.getUsagePattern();
+
+		// analyse state machine
+		StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
+		ArrayList<List<TransitionEdge>> transitionsList = stateMachineGraphAnalyser.getTransitions();
+
+		// sort paths by number of nodes
+		transitionsList.sort(new Comparator<List<TransitionEdge>>() {
+
+			@Override
+			public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
+				return Integer.compare(element1.size(), element2.size());
+			}
+		});
+
+		this.transitions = transitionsList.iterator();
+	}
+
+	/**
+	 * The method hasNext() returns true if it exists a further variation of code that describes the given API-rule.
+	 * 
+	 * @return true, if it exists a further variation of code that describes the given API-rule, otherwise false.
+	 */
+	public boolean hasNext() {
+		return this.transitions.hasNext();
 	}
 
 	/**
@@ -341,7 +337,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 			Class<?>[] methodParameter = new Class<?>[parameters.size()];
 			int i = 0;
-			List<String> primitiveTypes = Arrays.asList(new String[] { "int", "boolean", "short", "double", "float", "long", "int[]", "byte[]", "char[]" });
+			List<String> primitiveTypes = Arrays.asList(new String[] { "int", "boolean", "short", "double", "float", "long", "byte", "int[]", "byte[]", "char[]" });
 
 			for (Entry<String, String> parameter : parameters) {
 				if (primitiveTypes.contains(parameter.getValue())) {
@@ -358,6 +354,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 							break;
 						case "float":
 							primitiveType = float.class;
+							break;
+						case "byte":
+							primitiveType = byte.class;
 							break;
 						case "byte[]":
 							primitiveType = byte[].class;

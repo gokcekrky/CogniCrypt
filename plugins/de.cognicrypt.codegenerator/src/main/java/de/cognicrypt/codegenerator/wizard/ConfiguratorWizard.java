@@ -353,21 +353,17 @@ public class ConfiguratorWizard extends Wizard {
 		final DeveloperProject developerProject = codeGenerator.getDeveloperProject();
 
 		// Generate code template
-		ret &= codeGenerator.generateCodeTemplates(
-			new Configuration(instance, this.constraints, developerProject.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile),
-			selectedTask.getAdditionalResources());
+		Configuration chosenConfig = new Configuration(instance, this.constraints, developerProject
+			.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
+		String additionalResources = selectedTask.getAdditionalResources();
+		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
 
 		String[] rules = { "AlgorithmParameters", "Cipher", "DHGenParameterSpec", "DHParameterSpec", "DSAGenParameterSpec", "DSAParameterSpec", "GCMParameterSpec", "HMACParameterSpec", "IvParameterSpec", "KeyGenerator", "KeyPair", "KeyPairGenerator", "KeyStore", "Mac", "MessageDigest", "PBEKeySpec", "PBEParameterSpec", "RSAKeyGenParameterSpec", "SecretKey", "SecretKeyFactory", "SecretKeySpec", "SecureRandom", "Signature" };
-		//String[] rules = { "DHGenParameterSpec", "DHParameterSpec"};
-		//String[] rules = { "KeyGenerator" };
-		//String[] rules = { "HMACParameterSpec" };
-		//String[] rules = { "KeyGenerator", "Cipher" };
-		//String[] rules = { "SecureRandom" };
 
 		for (String ruleName : rules) {
 			try {
 				CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), ruleName);
-				codeGeneratorNew.next();
+				codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
 			} catch (Exception e) {
 				JOptionPane.showMessageDialog(null, "Code generation for rule " + ruleName + " failed");
 			}
