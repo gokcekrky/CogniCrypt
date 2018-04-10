@@ -105,7 +105,7 @@ public class Utils {
 	public static IEditorPart getCurrentlyOpenEditor() {
 		final Display defaultDisplay = Display.getDefault();
 		final Runnable getWindow = () -> setWindow(PlatformUI.getWorkbench().getActiveWorkbenchWindow());
-		defaultDisplay.asyncExec(getWindow);
+		defaultDisplay.syncExec(getWindow);
 		if (Utils.window == null) {
 			try {
 				Thread.sleep(500);
@@ -264,7 +264,7 @@ public class Utils {
 	}
 
 	protected static void setWindow(final IWorkbenchWindow activeWorkbenchWindow) {
-		Utils.window = activeWorkbenchWindow;
+		window = activeWorkbenchWindow;
 	}
 
 	public static String filterQuotes(final String dirty) {
