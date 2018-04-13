@@ -32,179 +32,6 @@ import de.cognicrypt.utils.Utils;
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 	public static Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
-
-	/**
-	 * This constructor allows it to set a specific class and method names that are used in the generated Java code.
-	 * 
-	 * @param cryptslRule
-	 *        Name of the cryptsl rule that should by transformed into java code.
-	 * @param className
-	 *        Class name that is used for the generated Java class.
-	 * @param methodName
-	 *        Method name that is usd for the generated Java code
-	 * @throws Exception
-	 */
-
-	public CrySLBasedCodeGenerator(IProject targetProject, String ruleName) throws Exception {
-		super(targetProject);
-
-		rule = getCryptSLRule(ruleName);
-		// Determine class name
-		usedClass = rule.getClassName();
-		newClass = usedClass + "Provider";
-
-		// initialise code generator
-		init();
-
-	}
-
-	/**
-	 * Returns the cryptsl rule with the name that is defined by the method parameter cryptslRule.
-	 * 
-	 * @param cryptslRule
-	 *        Name of cryptsl rule that should by returend.
-	 * 
-	 * @return Returns the cryptsl rule with the name that is defined by the parameter cryptslRule.
-	 * @throws Exception
-	 *         Thows an exception if given rule name does not exist.
-	 */
-	public static CryptSLRule getCryptSLRule(String cryptslRule) throws Exception {
-		final FileInputStream fileIn = new FileInputStream(Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID)
-			.getAbsolutePath() + "\\" + cryptslRule + ".cryptslbin");
-		final ObjectInputStream in = new ObjectInputStream(fileIn);
-		CryptSLRule rule = (CryptSLRule) in.readObject();
-		in.close();
-		fileIn.close();
-		return rule;
-	}
-
-	@Override
-	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
-		File[] codeFileList;
-		boolean next = true;
-
-		do {
-
-			// Load one possible path through the state machine.
-			List<TransitionEdge> currentTransitions = transitions.next();
-
-			// Determine imports, method calls and thrown exceptions
-			determineImports(currentTransitions);
-			generateMethodInvocations(currentTransitions);
-
-			// Create code object that includes the generated java code
-			JavaCodeFile javaCodeFile = new JavaCodeFile(newClass + ".java");
-
-			// generate Java code
-			// ################################################################
-
-			// first add imports
-			for (String ip : imports) {
-				javaCodeFile.addCodeLine(ip);
-			}
-
-			// class definition
-			javaCodeFile.addCodeLine("public class " + newClass + " {");
-
-			// method definition
-			// ################################################################
-
-			// Determine method name. We still found no solution to determine an appropriate method name.
-			// Therefore we use the name "use()" as default.
-			// This default name can be altered by using the following constructor:
-			// CodeGenerator(String cryptslRule, String className, String methodName)
-			String methodName;
-
-			if (newMethod.equals("VALUE_IS_NOT_SET")) {
-				methodName = "use";
-			} else {
-				methodName = newMethod;
-			}
-
-			String returnType = getReturnType(currentTransitions);
-
-			String methodDefintion = "public " + returnType + " " + methodName + "(";
-
-			Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
-
-			do {
-				if (iMethodParameters.hasNext()) {
-					Entry<String, String> parameter = iMethodParameters.next();
-					methodDefintion = methodDefintion + parameter.getValue() + " " + parameter.getKey();
-				}
-
-				// if a further parameters exist separate them by comma.
-				if (iMethodParameters.hasNext()) {
-					methodDefintion = methodDefintion + ", ";
-				}
-
-			} while (iMethodParameters.hasNext());
-
-			methodDefintion = methodDefintion + ") ";
-
-			// add thrown exceptions
-			if (exceptions.size() > 0) {
-				methodDefintion = methodDefintion + "throws ";
-
-				Iterator<String> iExceptions = exceptions.iterator();
-
-				do {
-					String exception = iExceptions.next();
-					methodDefintion = methodDefintion + exception;
-
-					// if a further exception class follows separate them by comma
-					if (iExceptions.hasNext()) {
-						methodDefintion = methodDefintion + ", ";
-					}
-
-				} while (iExceptions.hasNext());
-
-			}
-
-			methodDefintion = methodDefintion + " {";
-
-			javaCodeFile.addCodeLine(methodDefintion);
-
-			// add method body
-
-			// first method code line for test reasons
-			javaCodeFile.addCodeLine("System.out.println(\"Method is running :-)\");");
-
-			for (String methodInvocation : methodInvocations) {
-				javaCodeFile.addCodeLine(methodInvocation);
-			}
-
-			// close method definition
-			javaCodeFile.addCodeLine("}");
-			// close class definition
-			javaCodeFile.addCodeLine("}");
-
-			// compile code
-			// ################################################################
-			String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
-			File codeFile = null;
-			try {
-				codeFile = javaCodeFile.writeToDisk(filePath);
-			} catch (Exception e) {
-				Activator.getDefault().logError(e);
-			}
-			codeFileList = new File[] { codeFile };
-
-			// TODO
-			// Compiling is enabled for testing
-			CodeHandler codeHandler = new CodeHandler(codeFileList);
-			//codeHandler.compile();
-
-			// execute code
-			//next = !(codeHandler.run(newClass, "use", null, null));
-
-			next = false;
-
-		} while (next);
-
-		return codeFileList != null;
-	}
-
 	/**
 	 * Iterator over all possible transitions that describe the source code of the given rule.
 	 */
@@ -213,7 +40,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	/**
 	 * Object of the parsed rule.
 	 */
-	private CryptSLRule rule;
+	//	private CryptSLRule rule;
 
 	/**
 	 * Class name of the new generated Java class.
@@ -261,28 +88,208 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	private ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
 
 	/**
+	 * This constructor allows it to set a specific class and method names that are used in the generated Java code.
+	 * 
+	 * @param cryptslRule
+	 *        Name of the cryptsl rule that should by transformed into java code.
+	 * @param className
+	 *        Class name that is used for the generated Java class.
+	 * @param methodName
+	 *        Method name that is usd for the generated Java code
+	 * @throws Exception
+	 */
+
+	public CrySLBasedCodeGenerator(IProject targetProject, List<String> genRules) throws Exception {
+		super(targetProject);
+		for (String ruleName : genRules) {
+			rules.put(ruleName, getCryptSLRule(ruleName));
+		}
+		// Determine class name
+		//		usedClass = rule.getClassName();
+		//		newClass = usedClass + "Provider";
+
+		// initialise code generator
+		init();
+
+	}
+
+	/**
+	 * Returns the cryptsl rule with the name that is defined by the method parameter cryptslRule.
+	 * 
+	 * @param cryptslRule
+	 *        Name of cryptsl rule that should by returend.
+	 * 
+	 * @return Returns the cryptsl rule with the name that is defined by the parameter cryptslRule.
+	 * @throws Exception
+	 *         Thows an exception if given rule name does not exist.
+	 */
+	public static CryptSLRule getCryptSLRule(String cryptslRule) throws Exception {
+		final FileInputStream fileIn = new FileInputStream(Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID)
+			.getAbsolutePath() + "\\" + cryptslRule + ".cryptslbin");
+		final ObjectInputStream in = new ObjectInputStream(fileIn);
+		CryptSLRule rule = (CryptSLRule) in.readObject();
+		in.close();
+		fileIn.close();
+		return rule;
+	}
+
+	@Override
+	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
+		boolean next = true;
+		File[] codeFileList = null;
+
+		for (CryptSLRule rule : rules.values()) {
+			// get state machine of cryptsl rule
+			StateMachineGraph stateMachine = rule.getUsagePattern();
+
+			// analyse state machine
+			StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
+			ArrayList<List<TransitionEdge>> transitionsList;
+			try {
+				transitionsList = stateMachineGraphAnalyser.getTransitions();
+				transitionsList.sort(new Comparator<List<TransitionEdge>>() {
+					// sort paths by number of nodes
+
+					@Override
+					public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
+						return Integer.compare(element1.size(), element2.size());
+					}
+				});
+				this.transitions = transitionsList.iterator();
+			} catch (Exception e) {
+				Activator.getDefault().logError(e);
+			}
+
+
+			do {
+
+				// Load one possible path through the state machine.
+				List<TransitionEdge> currentTransitions = transitions.next();
+
+				// Determine imports, method calls and thrown exceptions
+				determineImports(currentTransitions);
+				generateMethodInvocations(rule, currentTransitions);
+
+				// Create code object that includes the generated java code
+				JavaCodeFile javaCodeFile = new JavaCodeFile(newClass + ".java");
+
+				// generate Java code
+				// ################################################################
+
+				// first add imports
+				for (String ip : imports) {
+					javaCodeFile.addCodeLine(ip);
+				}
+
+				// class definition
+				javaCodeFile.addCodeLine("public class " + newClass + " {");
+
+				// method definition
+				// ################################################################
+
+				// Determine method name. We still found no solution to determine an appropriate method name.
+				// Therefore we use the name "use()" as default.
+				// This default name can be altered by using the following constructor:
+				// CodeGenerator(String cryptslRule, String className, String methodName)
+				String methodName;
+
+				if (newMethod.equals("VALUE_IS_NOT_SET")) {
+					methodName = "use";
+				} else {
+					methodName = newMethod;
+				}
+
+				String returnType = getReturnType(currentTransitions);
+
+				String methodDefintion = "public " + returnType + " " + methodName + "(";
+
+				Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
+
+				do {
+					if (iMethodParameters.hasNext()) {
+						Entry<String, String> parameter = iMethodParameters.next();
+						methodDefintion = methodDefintion + parameter.getValue() + " " + parameter.getKey();
+					}
+
+					// if a further parameters exist separate them by comma.
+					if (iMethodParameters.hasNext()) {
+						methodDefintion = methodDefintion + ", ";
+					}
+
+				} while (iMethodParameters.hasNext());
+
+				methodDefintion = methodDefintion + ") ";
+
+				// add thrown exceptions
+				if (exceptions.size() > 0) {
+					methodDefintion = methodDefintion + "throws ";
+
+					Iterator<String> iExceptions = exceptions.iterator();
+
+					do {
+						String exception = iExceptions.next();
+						methodDefintion = methodDefintion + exception;
+
+						// if a further exception class follows separate them by comma
+						if (iExceptions.hasNext()) {
+							methodDefintion = methodDefintion + ", ";
+						}
+
+					} while (iExceptions.hasNext());
+
+				}
+
+				methodDefintion = methodDefintion + " {";
+
+				javaCodeFile.addCodeLine(methodDefintion);
+
+				// add method body
+
+				// first method code line for test reasons
+				javaCodeFile.addCodeLine("System.out.println(\"Method is running :-)\");");
+
+				for (String methodInvocation : methodInvocations) {
+					javaCodeFile.addCodeLine(methodInvocation);
+				}
+
+				// close method definition
+				javaCodeFile.addCodeLine("}");
+				// close class definition
+				javaCodeFile.addCodeLine("}");
+
+				// compile code
+				// ################################################################
+				String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
+				File codeFile = null;
+				try {
+					codeFile = javaCodeFile.writeToDisk(filePath);
+				} catch (Exception e) {
+					Activator.getDefault().logError(e);
+				}
+				codeFileList = new File[] { codeFile };
+
+				// TODO
+				// Compiling is enabled for testing
+				CodeHandler codeHandler = new CodeHandler(codeFileList);
+				//codeHandler.compile();
+
+				// execute code
+				//next = !(codeHandler.run(newClass, "use", null, null));
+
+				next = false;
+
+			} while (next);
+		}
+		return codeFileList != null;
+	}
+
+	/**
 	 * This method initialises the a new CodeGenerator object and is invoked by the constructor.
 	 * 
 	 * @throws Exception
 	 */
 	private void init() throws Exception {
-		// get state machine of cryptsl rule
-		StateMachineGraph stateMachine = rule.getUsagePattern();
 
-		// analyse state machine
-		StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
-		ArrayList<List<TransitionEdge>> transitionsList = stateMachineGraphAnalyser.getTransitions();
-
-		// sort paths by number of nodes
-		transitionsList.sort(new Comparator<List<TransitionEdge>>() {
-
-			@Override
-			public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
-				return Integer.compare(element1.size(), element2.size());
-			}
-		});
-
-		this.transitions = transitionsList.iterator();
 	}
 
 	/**
@@ -300,7 +307,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * @param currentTransitions
 	 *        List of transitions that represents a cryptsl rule's state machine.
 	 */
-	private void generateMethodInvocations(List<TransitionEdge> currentTransitions) {
+	private void generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions) {
 		// Determine possible valid parameter values be analysing
 		// the given constraints
 		// ################################################################
