@@ -151,7 +151,6 @@ public class ConfiguratorWizard extends Wizard {
 			this.createdPages.put(((BeginnerTaskQuestionPage) currentPage).getCurrentPageID(), currentPage);
 			final BeginnerTaskQuestionPage beginnerTaskQuestionPage = (BeginnerTaskQuestionPage) currentPage;
 
-		
 			// remove set constraints if the user press the previous button
 			if (prevPageId != beginnerTaskQuestionPage.getCurrentPageID()) {
 				protocolList.add(beginnerTaskQuestionPage.getCurrentPageID());
@@ -163,8 +162,8 @@ public class ConfiguratorWizard extends Wizard {
 							for (Question q : previousPageQuestions) {
 								this.constraints.remove(q);
 							}
-							protocolList.remove(protocolList.size()-1);	//remove last page index
-							protocolList.remove(protocolList.size()-1);	//remove duplicate
+							protocolList.remove(protocolList.size() - 1);	//remove last page index
+							protocolList.remove(protocolList.size() - 1);	//remove duplicate
 						}
 					}
 				}
