@@ -27,6 +27,7 @@ import crypto.rules.StateMachineGraph;
 import crypto.rules.TransitionEdge;
 import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.codegenerator.wizard.Configuration;
+import de.cognicrypt.core.Constants;
 import de.cognicrypt.utils.Utils;
 
 public class CrySLBasedCodeGenerator extends CodeGenerator {
@@ -139,6 +140,8 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		File[] codeFileList = null;
 
 		for (CryptSLRule rule : rules.values()) {
+			usedClass = rule.getClassName();
+			newClass = "CogniCrypt" + usedClass;
 			// get state machine of cryptsl rule
 			StateMachineGraph stateMachine = rule.getUsagePattern();
 
@@ -259,10 +262,10 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 				// compile code
 				// ################################################################
-				String filePath = "C:\\Users\\stefank3\\git\\CryptoAnalysis\\CryptoAnalysis\\src\\test\\resources\\";
 				File codeFile = null;
 				try {
-					codeFile = javaCodeFile.writeToDisk(filePath);
+					codeFile = javaCodeFile.writeToDisk(this.project.getProjectPath() + Constants.innerFileSeparator + this.project
+						.getSourcePath() + Constants.CodeGenerationCallFolder + Constants.innerFileSeparator);
 				} catch (Exception e) {
 					Activator.getDefault().logError(e);
 				}

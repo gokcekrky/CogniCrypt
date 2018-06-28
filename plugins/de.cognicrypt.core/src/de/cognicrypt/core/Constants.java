@@ -78,7 +78,8 @@ public class Constants {
 	public static final String AdditionalOutputTempFile = "OutputTemp.java";
 	public static final String TempSuffix = "Temp";
 	public static final String PackageName = "Crypto";
-	public static final String CodeGenerationCallFile = Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + Constants.AdditionalOutputFile;
+	public static final String CodeGenerationCallFolder = Constants.innerFileSeparator + Constants.PackageName;
+	public static final String CodeGenerationCallFile = CodeGenerationCallFolder + Constants.innerFileSeparator + Constants.AdditionalOutputFile;
 
 	// File info for Code Generation
 	public static final String OpenFile = "Current file is open: ";

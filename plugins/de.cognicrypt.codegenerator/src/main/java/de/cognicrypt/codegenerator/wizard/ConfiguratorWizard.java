@@ -1,12 +1,12 @@
 package de.cognicrypt.codegenerator.wizard;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -387,17 +387,15 @@ public class ConfiguratorWizard extends Wizard {
 		Configuration chosenConfig = new Configuration(instance, this.constraints, developerProject
 			.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
 		String additionalResources = selectedTask.getAdditionalResources();
-		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
+		//		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
 
-		String[] rules = { "AlgorithmParameters", "Cipher", "DHGenParameterSpec", "DHParameterSpec", "DSAGenParameterSpec", "DSAParameterSpec", "GCMParameterSpec", "HMACParameterSpec", "IvParameterSpec", "KeyGenerator", "KeyPair", "KeyPairGenerator", "KeyStore", "Mac", "MessageDigest", "PBEKeySpec", "PBEParameterSpec", "RSAKeyGenParameterSpec", "SecretKey", "SecretKeyFactory", "SecretKeySpec", "SecureRandom", "Signature" };
-
-		for (String ruleName : rules) {
-			try {
-				CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), ruleName);
-				codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
-			} catch (Exception e) {
-				JOptionPane.showMessageDialog(null, "Code generation for rule " + ruleName + " failed");
-			}
+		try {
+			List<String> rules = Arrays.asList(new String[] { "Cipher", "KeyGenerator", "SecretKey" });
+			CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), rules);
+			codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		return ret;
