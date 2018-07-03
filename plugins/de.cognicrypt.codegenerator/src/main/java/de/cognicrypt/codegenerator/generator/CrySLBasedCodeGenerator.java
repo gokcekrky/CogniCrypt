@@ -179,6 +179,8 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// generate Java code
 				// ################################################################
 
+				javaCodeFile.addCodeLine("package " + Constants.PackageName);
+
 				// first add imports
 				for (String ip : imports) {
 					javaCodeFile.addCodeLine(ip);
