@@ -71,8 +71,9 @@ public class JavaCodeFile {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		(new File(filePath)).mkdirs();
 		try (FileOutputStream fileOutputStream = new FileOutputStream(filePath + javaCodeFile)) {
+
 			fileOutputStream.write(document.get().getBytes());
 		} catch (Exception e) {
 			throw new Exception("Writing source code to file failed.");

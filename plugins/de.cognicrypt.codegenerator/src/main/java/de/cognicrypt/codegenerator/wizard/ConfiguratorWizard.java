@@ -390,7 +390,7 @@ public class ConfiguratorWizard extends Wizard {
 		//		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
 
 		try {
-			List<String> rules = Arrays.asList(new String[] { "Cipher", "KeyGenerator", "SecretKey" });
+			List<String> rules = Arrays.asList(new String[] { "Cipher", "KeyGenerator" });
 			CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), rules);
 			codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
 		} catch (Exception e) {

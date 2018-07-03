@@ -163,7 +163,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				Activator.getDefault().logError(e);
 			}
 
-
 			do {
 
 				// Load one possible path through the state machine.
@@ -179,7 +178,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// generate Java code
 				// ################################################################
 
-				javaCodeFile.addCodeLine("package " + Constants.PackageName);
+				javaCodeFile.addCodeLine("package " + Constants.PackageName + ";");
 
 				// first add imports
 				for (String ip : imports) {
@@ -389,7 +388,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 						methodParameter[i] = Class.forName(parameter.getValue());
 						i++;
 					} catch (ClassNotFoundException e) {
-						// TODO Auto-generated catch block
 						System.out.println("No class found for type: " + parameter.getValue().toString());
 						e.printStackTrace();
 					}
