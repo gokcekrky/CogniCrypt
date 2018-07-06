@@ -1,5 +1,9 @@
 package de.cognicrypt.codegenerator.wizard;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,6 +24,7 @@ import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
+import crypto.rules.CryptSLRule;
 import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.codegenerator.DeveloperProject;
 import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModel;
@@ -27,6 +32,7 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModelUtils;
 import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.generator.CodeGenerator;
 import de.cognicrypt.codegenerator.generator.CrySLBasedCodeGenerator;
+import de.cognicrypt.codegenerator.generator.RuleDependencyTree;
 import de.cognicrypt.codegenerator.generator.XSLBasedGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
 import de.cognicrypt.codegenerator.question.ClaferDependency;
@@ -39,6 +45,7 @@ import de.cognicrypt.codegenerator.wizard.beginner.BeginnerModeQuestionnaire;
 import de.cognicrypt.codegenerator.wizard.beginner.BeginnerTaskQuestionPage;
 import de.cognicrypt.core.Constants;
 import de.cognicrypt.core.Constants.GUIElements;
+import de.cognicrypt.utils.Utils;
 
 /**
  * This class implements the logic of the dialogue windows the user has to go through. Currently, methods getNextPage() and performFinish() have special handling of TLS task that
@@ -388,7 +395,9 @@ public class ConfiguratorWizard extends Wizard {
 			.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
 		String additionalResources = selectedTask.getAdditionalResources();
 		//		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
-
+		String rulesFolder = Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID).getAbsolutePath();
+		RuleDependencyTree rdt = new RuleDependencyTree(readCrysLRules(rulesFolder));
+		rdt.toDotFile(rulesFolder);
 		try {
 			List<String> rules = Arrays.asList(new String[] { "Cipher", "KeyGenerator" });
 			CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), rules);
@@ -399,6 +408,25 @@ public class ConfiguratorWizard extends Wizard {
 		}
 
 		return ret;
+	}
+
+	private List<CryptSLRule> readCrysLRules(String rulesFolder) {
+		List<CryptSLRule> rules = new ArrayList<CryptSLRule>();
+		
+
+		for (File rule : (new File(rulesFolder)).listFiles()) {
+			FileInputStream fileIn;
+			try {
+				fileIn = new FileInputStream(rule);
+				final ObjectInputStream in = new ObjectInputStream(fileIn);
+				rules.add((CryptSLRule) in.readObject());
+				in.close();
+				fileIn.close();
+			} catch (IOException | ClassNotFoundException e) {
+				Activator.getDefault().logError(e);
+			}
+		}
+		return rules;
 	}
 
 	public HashMap<Question, Answer> getConstraints() {

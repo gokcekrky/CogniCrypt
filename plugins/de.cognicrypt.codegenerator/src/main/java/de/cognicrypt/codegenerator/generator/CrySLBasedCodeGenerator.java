@@ -105,9 +105,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		for (String ruleName : genRules) {
 			rules.put(ruleName, getCryptSLRule(ruleName));
 		}
-		// Determine class name
-		//		usedClass = rule.getClassName();
-		//		newClass = usedClass + "Provider";
 
 		// initialise code generator
 		init();
