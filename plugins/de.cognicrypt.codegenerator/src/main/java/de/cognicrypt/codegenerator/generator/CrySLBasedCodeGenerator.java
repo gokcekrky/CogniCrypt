@@ -39,54 +39,19 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	private Iterator<List<TransitionEdge>> transitions;
 
 	/**
-	 * Object of the parsed rule.
-	 */
-	//	private CryptSLRule rule;
-
-	/**
-	 * Class name of the new generated Java class.
-	 */
-	private String newClass;
-
-	/**
-	 * Method name that is used in the new generated Java class.
-	 */
-	private String newMethod = "VALUE_IS_NOT_SET";
-
-	/**
-	 * Name of the Java class that is used in the generated Java code.
-	 */
-	private String usedClass;
-
-	/**
 	 * Hash table to store the values that are assigend to variables.
 	 */
 	Hashtable<String, String> parameterValues = new Hashtable<String, String>();
 
 	/**
-	 * Name of instance that is used for method invocations
-	 */
-	private String instanceName = "";
-
-	/**
 	 * Contains the import instructions that are needed for the generated code.
 	 */
-	private ArrayList<String> imports = new ArrayList<String>();
+//	private ArrayList<String> imports = new ArrayList<String>();
 
 	/**
 	 * Contains the exceptions classes that are thrown by the generated code.
 	 */
 	private ArrayList<String> exceptions = new ArrayList<String>();
-
-	/**
-	 * Contains all method invocations that are executed by an API-Rule.
-	 */
-	private ArrayList<String> methodInvocations = new ArrayList<String>();
-
-	/**
-	 * Contains all parameters that cannot be replaced by a final value. These parameters are added as method parameters for the super method "use()".
-	 */
-	private ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
 
 	/**
 	 * This constructor allows it to set a specific class and method names that are used in the generated Java code.
@@ -137,8 +102,8 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		File[] codeFileList = null;
 
 		for (CryptSLRule rule : rules.values()) {
-			usedClass = rule.getClassName();
-			newClass = "CogniCrypt" + usedClass;
+			String usedClass = rule.getClassName();
+			String newClass = "CogniCrypt" + usedClass;
 			// get state machine of cryptsl rule
 			StateMachineGraph stateMachine = rule.getUsagePattern();
 
@@ -164,10 +129,11 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 				// Load one possible path through the state machine.
 				List<TransitionEdge> currentTransitions = transitions.next();
+				ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
 
 				// Determine imports, method calls and thrown exceptions
-				determineImports(currentTransitions);
-				generateMethodInvocations(rule, currentTransitions);
+				ArrayList<String> imports = determineImports(currentTransitions);
+				ArrayList<String> methodInvocations = generateMethodInvocations(rule, currentTransitions, methodParametersOfSuperMethod, imports);
 
 				// Create code object that includes the generated java code
 				JavaCodeFile javaCodeFile = new JavaCodeFile(newClass + ".java");
@@ -188,19 +154,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// method definition
 				// ################################################################
 
-				// Determine method name. We still found no solution to determine an appropriate method name.
-				// Therefore we use the name "use()" as default.
-				// This default name can be altered by using the following constructor:
-				// CodeGenerator(String cryptslRule, String className, String methodName)
-				String methodName;
+				String methodName = "use" + newClass;
 
-				if (newMethod.equals("VALUE_IS_NOT_SET")) {
-					methodName = "use";
-				} else {
-					methodName = newMethod;
-				}
-
-				String returnType = getReturnType(currentTransitions);
+				String returnType = getReturnType(currentTransitions, usedClass);
 
 				String methodDefintion = "public " + returnType + " " + methodName + "(";
 
@@ -307,190 +263,58 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * 
 	 * @param currentTransitions
 	 *        List of transitions that represents a cryptsl rule's state machine.
+	 * @param methodParametersOfSuperMethod 
+	 * @param imports 
 	 */
-	private void generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions) {
+	private ArrayList<String> generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<String> imports) {
 		// Determine possible valid parameter values be analysing
 		// the given constraints
 		// ################################################################
 		analyseConstraints(rule.getConstraints());
 
+		ArrayList<String> methodInvocations = new ArrayList<String>();
 		for (TransitionEdge transition : currentTransitions) {
 
 			// Determine method name and signature
 			// ################################################################
 			CryptSLMethod method = transition.getLabel().get(0);
-			String methodName = method.getMethodName().substring(method.getMethodName().lastIndexOf(".") + 1);
+			String methodName = method.getMethodName();
+			methodName  = methodName.substring(methodName.lastIndexOf(".") + 1);
 
 			// Determine parameter of method.
 			List<Entry<String, String>> parameters = method.getParameters();
 			Iterator<Entry<String, String>> parametersIterator = parameters.iterator();
 
-			String currentInvokedMethod = methodName + "(";
+			StringBuilder sourceLineGenerator = new StringBuilder(methodName);
+			sourceLineGenerator.append("(");
 
 			do {
 				if (parametersIterator.hasNext()) {
-					currentInvokedMethod = currentInvokedMethod + parametersIterator.next().getKey();
+					sourceLineGenerator.append(parametersIterator.next().getKey());
 				}
 
 				if (parametersIterator.hasNext()) {
-					currentInvokedMethod = currentInvokedMethod + ", ";
+					sourceLineGenerator.append(", ");
 				}
 
 			} while (parametersIterator.hasNext());
 
-			currentInvokedMethod = currentInvokedMethod + ");";
+			sourceLineGenerator.append(");");
 
-			// Determine exceptions that could be thrown be the invoked method.
-			// ################################################################
-
-			Class<?>[] methodParameter = new Class<?>[parameters.size()];
-			int i = 0;
-			List<String> primitiveTypes = Arrays.asList(new String[] { "int", "boolean", "short", "double", "float", "long", "byte", "int[]", "byte[]", "char[]" });
-
-			for (Entry<String, String> parameter : parameters) {
-				if (primitiveTypes.contains(parameter.getValue())) {
-					Class<?> primitiveType = null;
-					switch (parameter.getValue()) {
-						case "int":
-							primitiveType = int.class;
-							break;
-						case "double":
-							primitiveType = double.class;
-							break;
-						case "boolean":
-							primitiveType = boolean.class;
-							break;
-						case "float":
-							primitiveType = float.class;
-							break;
-						case "byte":
-							primitiveType = byte.class;
-							break;
-						case "byte[]":
-							primitiveType = byte[].class;
-							break;
-						case "int[]":
-							primitiveType = int[].class;
-							break;
-						case "char[]":
-							primitiveType = char[].class;
-							break;
-						default:
-							primitiveType = int.class;
-					}
-					methodParameter[i] = primitiveType;
-
-				} else {
-					try {
-						methodParameter[i] = Class.forName(parameter.getValue());
-						i++;
-					} catch (ClassNotFoundException e) {
-						System.out.println("No class found for type: " + parameter.getValue().toString());
-						e.printStackTrace();
-					}
-				}
-			}
-
-			// Determine name of class that contains the given method
-			String className = method.getMethodName().substring(0, method.getMethodName().lastIndexOf("."));
+			Class<?>[] methodParameter = collectParameterTypes(parameters);
 
 			try {
-				determineThrownExceptions(className, methodName, methodParameter);
-			} catch (NoSuchMethodException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (SecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				determineThrownExceptions(method.getMethodName().substring(0, method.getMethodName().lastIndexOf(".")), methodName, methodParameter, imports);
+			} catch (NoSuchMethodException | SecurityException | ClassNotFoundException e) {
+				Activator.getDefault().logError(e);
 			}
 
 			// TODO determine possible subclasses
 			// ################################################################
 			// see also method getSubClass(className);
-
-			// Generate method invocation. Hereafter, a method call is distinguished in three categories.
-			String methodInvocation = "";
-
-			// 1. Constructor method calls
-			// 2. Static method calls
-			// 3. Instance method calls
-
-			// 1. Constructor method call
-			if (currentInvokedMethod.substring(0, currentInvokedMethod.indexOf("(")).equals(usedClass)) {
-
-				// determine name of current instance
-				instanceName = usedClass.substring(0, 1).toLowerCase() + usedClass.substring(1);
-
-				methodInvocation = usedClass + " " + instanceName + " = new " + currentInvokedMethod;
-
-				// If constructor call is the last method call return new object.
-				String lastInvokedMethod = getLastInvokedMethodName(currentTransitions).toString();
-
-				if (methodName.equals(lastInvokedMethod)) {
-					methodInvocation = methodInvocation + "\nreturn " + instanceName + ";";
-				}
-			}
-			// Static method call
-			else if (currentInvokedMethod.contains("getInstance")) {
-				currentInvokedMethod = currentInvokedMethod.substring(currentInvokedMethod.lastIndexOf("=") + 1).trim();
-
-				// determine name of current instance
-				instanceName = usedClass.substring(0, 1).toLowerCase() + usedClass.substring(1);
-
-				methodInvocation = usedClass + " " + instanceName + " = " + usedClass + "." + currentInvokedMethod;
-
-				// If constructor call is the last method call return new object.
-				String lastInvokedMethod = getLastInvokedMethodName(currentTransitions).toString();
-
-				if (methodName.equals(lastInvokedMethod)) {
-					methodInvocation = methodInvocation + "\nreturn " + instanceName + ";";
-				}
-			}
-			// 3. Instance method call
-			else {
-				// Does method have a return value?
-				if (method.getRetObject() != null) {
-					String returnValueType = method.getRetObject().getValue();
-
-					// Determine lastInvokedMethod
-					String lastInvokedMethod = getLastInvokedMethodName(currentTransitions).toString();
-
-					// FIXME Currently methods with return type void are
-					// tagged by "AnyType". "AnyType" should be replaced by "void"
-					// form methods with return type void.
-					// Opened a new issue in the project CROSSINGTUD/CryptoAnalysis:
-					// Return value of CryptSLMethod.getRetObject().getValue() #30
-
-					// Last invoked method and return type is not equal to "void".
-					if (methodName.equals(lastInvokedMethod) && !returnValueType.equals("AnyType")) {
-						methodInvocation = "return " + instanceName + "." + currentInvokedMethod;
-					}
-					// Last invoked method and return type is equal to "void".
-					else if (methodName.equals(lastInvokedMethod) && returnValueType.equals("AnyType")) {
-						methodInvocation = instanceName + "." + currentInvokedMethod + "\nreturn " + instanceName + ";";
-					}
-					// Not the last invoked method and return type is not equal to "void".
-					else if (!methodName.equals(lastInvokedMethod) && !returnValueType.equals("AnyType")) {
-						methodInvocation = returnValueType + " = " + instanceName + "." + currentInvokedMethod;
-					}
-					// Not the last invoked method and return type is equal to "void"
-					else if (!methodName.equals(lastInvokedMethod) && returnValueType.equals("AnyType")) {
-						methodInvocation = instanceName + "." + currentInvokedMethod;
-					} else {
-						methodInvocation = instanceName + "." + currentInvokedMethod;
-					}
-
-				} else {
-					methodInvocation = instanceName + "." + currentInvokedMethod;
-				}
-			}
-
-			// Replace parameters by values that are defined in the previous step
-			// ################################################################
-			methodInvocation = replaceParameterByValue(parameters, methodInvocation);
+			String lastInvokedMethod = getLastInvokedMethodName(currentTransitions).toString();
+			String methodInvocation = generateMethodInvocation(lastInvokedMethod, methodParametersOfSuperMethod, imports, method, methodName, parameters, rule.getClassName(),
+				sourceLineGenerator);
 
 			// Add new generated method invocation
 			if (!methodInvocation.equals("")) {
@@ -499,6 +323,131 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			}
 
 		}
+		return methodInvocations;
+	}
+
+	private Class<?>[] collectParameterTypes(List<Entry<String, String>> parameters) {
+		Class<?>[] methodParameter = new Class<?>[parameters.size()];
+		int i = 0;
+		List<String> primitiveTypes = Arrays.asList(new String[] { "int", "boolean", "short", "double", "float", "long", "byte", "int[]", "byte[]", "char[]" });
+
+		for (Entry<String, String> parameter : parameters) {
+			if (primitiveTypes.contains(parameter.getValue())) {
+				Class<?> primitiveType = null;
+				switch (parameter.getValue()) {
+					case "int":
+						primitiveType = int.class;
+						break;
+					case "double":
+						primitiveType = double.class;
+						break;
+					case "boolean":
+						primitiveType = boolean.class;
+						break;
+					case "float":
+						primitiveType = float.class;
+						break;
+					case "byte":
+						primitiveType = byte.class;
+						break;
+					case "byte[]":
+						primitiveType = byte[].class;
+						break;
+					case "int[]":
+						primitiveType = int[].class;
+						break;
+					case "char[]":
+						primitiveType = char[].class;
+						break;
+					default:
+						primitiveType = int.class;
+				}
+				methodParameter[i] = primitiveType;
+
+			} else {
+				try {
+					methodParameter[i] = Class.forName(parameter.getValue());
+					i++;
+				} catch (ClassNotFoundException e) {
+					System.out.println("No class found for type: " + parameter.getValue().toString());
+					e.printStackTrace();
+				}
+			}
+		}
+		return methodParameter;
+	}
+
+	private String generateMethodInvocation(String lastInvokedMethod, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<String> imports, CryptSLMethod method, String methodName, List<Entry<String, String>> parameters, String className, StringBuilder currentInvokedMethod) {
+		// Generate method invocation. Hereafter, a method call is distinguished in three categories.
+		String methodInvocation = "";
+
+		String instanceName = className.substring(0, 1).toLowerCase() + className.substring(1);
+		
+		// 1. Constructor method calls
+		// 2. Static method calls
+		// 3. Instance method calls
+
+		// 1. Constructor method call
+		if (currentInvokedMethod.substring(0, currentInvokedMethod.indexOf("(")).equals(className)) {
+
+			methodInvocation = className + " " + instanceName + " = new " + currentInvokedMethod;
+
+			if (methodName.equals(lastInvokedMethod)) {
+				methodInvocation = methodInvocation + "\nreturn " + instanceName + ";";
+			}
+		}
+		// Static method call
+		else if (currentInvokedMethod.toString().contains("getInstance")) {
+			currentInvokedMethod = new StringBuilder(currentInvokedMethod.substring(currentInvokedMethod.lastIndexOf("=") + 1).trim());
+			methodInvocation = className + " " + instanceName + " = " + className + "." + currentInvokedMethod;
+
+			if (methodName.equals(lastInvokedMethod)) {
+				methodInvocation = methodInvocation + "\nreturn " + instanceName + ";";
+			}
+		}
+		// 3. Instance method call
+		else {
+			// Does method have a return value?
+			if (method.getRetObject() != null) {
+				String returnValueType = method.getRetObject().getValue();
+
+				// Determine lastInvokedMethod
+				lastInvokedMethod = lastInvokedMethod.substring(lastInvokedMethod.lastIndexOf('.') + 1);
+				
+				// FIXME Currently methods with return type void are
+				// tagged by "AnyType". "AnyType" should be replaced by "void"
+				// form methods with return type void.
+				// Opened a new issue in the project CROSSINGTUD/CryptoAnalysis:
+				// Return value of CryptSLMethod.getRetObject().getValue() #30
+
+				// Last invoked method and return type is not equal to "void".
+				if (methodName.equals(lastInvokedMethod) && !returnValueType.equals("AnyType")) {
+					methodInvocation = "return " + instanceName + "." + currentInvokedMethod;
+				}
+				// Last invoked method and return type is equal to "void".
+				else if (methodName.equals(lastInvokedMethod) && returnValueType.equals("AnyType")) {
+					methodInvocation = instanceName + "." + currentInvokedMethod + "\nreturn " + instanceName + ";";
+				}
+				// Not the last invoked method and return type is not equal to "void".
+				else if (!methodName.equals(lastInvokedMethod) && !returnValueType.equals("AnyType")) {
+					methodInvocation = returnValueType + " = " + instanceName + "." + currentInvokedMethod;
+				}
+				// Not the last invoked method and return type is equal to "void"
+				else if (!methodName.equals(lastInvokedMethod) && returnValueType.equals("AnyType")) {
+					methodInvocation = instanceName + "." + currentInvokedMethod;
+				} else {
+					methodInvocation = instanceName + "." + currentInvokedMethod;
+				}
+
+			} else {
+				methodInvocation = instanceName + "." + currentInvokedMethod;
+			}
+		}
+
+		// Replace parameters by values that are defined in the previous step
+		// ################################################################
+		methodInvocation = replaceParameterByValue(parameters, methodInvocation, methodParametersOfSuperMethod, imports);
+		return methodInvocation;
 	}
 
 	/**
@@ -543,10 +492,12 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * 
 	 * @param currentInvokedMethod
 	 *        Method invocation as string
+	 * @param methodParametersOfSuperMethod 
+	 * @param imports 
 	 * 
 	 * @return New method invocation as string (parameter names are replaces by values)
 	 */
-	private String replaceParameterByValue(List<Entry<String, String>> parameters, String currentInvokedMethod) {
+	private String replaceParameterByValue(List<Entry<String, String>> parameters, String currentInvokedMethod, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<String> imports) {
 
 		// Split current method invocation "variable = method(method parameter)" in:
 		// 1. variable = method
@@ -682,7 +633,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 *        All transitions that are used to describe the source code.
 	 * @return Returns the return type as string.
 	 */
-	private String getReturnType(List<TransitionEdge> transitions) {
+	private String getReturnType(List<TransitionEdge> transitions, String className) {
 		String returnType = "void";
 		// Get last 
 		CryptSLMethod lastInvokedMethod = getLastInvokedMethod(transitions);
@@ -691,7 +642,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		String type = lastInvokedMethod.getRetObject().getValue();
 
 		if (type.equals("AnyType")) {
-			returnType = usedClass;
+			returnType = className;
 		} else {
 			returnType = type;
 		}
@@ -744,18 +695,18 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * @param transitions
 	 *        All transitions that are used to describe the source code.
 	 */
-	private void determineImports(List<TransitionEdge> transitions) {
-		//ArrayList<String> imports = new ArrayList<String>();
+	private ArrayList<String> determineImports(List<TransitionEdge> transitions) {
+		ArrayList<String> imports = new ArrayList<String>();
 		for (TransitionEdge transition : transitions) {
 			String completeMethodName = transition.getLabel().get(0).getMethodName();
 			String importInstruction = "import " + completeMethodName.substring(0, completeMethodName.lastIndexOf(".")) + ";";
 
 			if (!imports.contains(importInstruction)) {
-				//javaCodeFile.addCodeLine(importInstruction);
 				imports.add(importInstruction);
 			}
 
 		}
+		return imports;
 	}
 
 	/**
@@ -769,12 +720,13 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * 
 	 * @param methodParameters
 	 *        Parameter of method to identify the method by their signature.
+	 * @param imports 
 	 * 
 	 * @throws NoSuchMethodException
 	 * @throws SecurityException
 	 * @throws ClassNotFoundException
 	 */
-	private void determineThrownExceptions(String className, String methodName, Class<?>[] methodParameters) throws NoSuchMethodException, SecurityException, ClassNotFoundException {
+	private void determineThrownExceptions(String className, String methodName, Class<?>[] methodParameters, List<String> imports) throws NoSuchMethodException, SecurityException, ClassNotFoundException {
 		List<Class<?>> exceptionClasses = new ArrayList<Class<?>>();
 		Method[] methods = java.lang.Class.forName(className).getMethods();
 		for (Method meth : methods) {

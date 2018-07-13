@@ -32,6 +32,7 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModelUtils;
 import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.generator.CodeGenerator;
 import de.cognicrypt.codegenerator.generator.CrySLBasedCodeGenerator;
+import de.cognicrypt.codegenerator.generator.CrySLComparator;
 import de.cognicrypt.codegenerator.generator.RuleDependencyTree;
 import de.cognicrypt.codegenerator.generator.XSLBasedGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
@@ -396,23 +397,19 @@ public class ConfiguratorWizard extends Wizard {
 		String additionalResources = selectedTask.getAdditionalResources();
 		//		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
 		String rulesFolder = Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID).getAbsolutePath();
-		RuleDependencyTree rdt = new RuleDependencyTree(readCrysLRules(rulesFolder));
-		rdt.toDotFile(rulesFolder);
 		try {
-			List<String> rules = Arrays.asList(new String[] { "Cipher", "KeyGenerator" });
+			List<String> rules = Arrays.asList(new String[] {"Cipher", "KeyGenerator"});
+			rules.sort(new CrySLComparator(readCrysLRules(rulesFolder)));
 			CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), rules);
 			codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Activator.getDefault().logError(e);
 		}
-
 		return ret;
 	}
 
 	private List<CryptSLRule> readCrysLRules(String rulesFolder) {
 		List<CryptSLRule> rules = new ArrayList<CryptSLRule>();
-		
 
 		for (File rule : (new File(rulesFolder)).listFiles()) {
 			FileInputStream fileIn;
