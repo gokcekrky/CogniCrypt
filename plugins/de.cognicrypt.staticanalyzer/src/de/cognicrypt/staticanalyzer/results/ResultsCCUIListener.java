@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2015-2018 TU Darmstadt
+ * 
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package de.cognicrypt.staticanalyzer.results;
 
 import java.util.Collection;
@@ -73,7 +83,8 @@ public class ResultsCCUIListener implements ICrySLResultsListener {
 		} catch (final ClassNotFoundException e) {
 			Activator.getDefault().logError(e);
 		}
-		//Fall-back path when retrieval of actual path fails. If the statement below fails, it should be left untouched as the actual bug is above.
+		// Fall-back path when retrieval of actual path fails. If the statement below
+		// fails, it should be left untouched as the actual bug is above.
 		return this.currentProject.getFile("src/" + className.getName().replace(".", "/") + ".java");
 	}
 
@@ -89,11 +100,12 @@ public class ResultsCCUIListener implements ICrySLResultsListener {
 
 	@Override
 	public void onSeedTimeout(final Node<Statement, Val> arg0) {
-		//Nothing
+		// Nothing
 	}
 
 	@Override
-	public void collectedValues(AnalysisSeedWithSpecification arg0, Multimap<CallSiteWithParamIndex, ExtractedValue> arg1) {
+	public void collectedValues(AnalysisSeedWithSpecification arg0,
+			Multimap<CallSiteWithParamIndex, ExtractedValue> arg1) {
 		// Nothing
 	}
 

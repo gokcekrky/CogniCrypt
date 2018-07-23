@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2015-2018 TU Darmstadt
+ * 
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package de.cognicrypt.crysl.handler;
 
 import java.io.IOException;
@@ -15,7 +25,8 @@ import org.eclipse.ui.IStartup;
 import de.cognicrypt.crysl.reader.CrySLModelReader;
 
 /**
- * At startup, this handler registers a listener that will be informed after a build, whenever resources were changed.
+ * At startup, this handler registers a listener that will be informed after a
+ * build, whenever resources were changed.
  *
  * @author Eric Bodden
  * @author Stefan Krueger
@@ -32,19 +43,20 @@ public class StartupHandler implements IStartup {
 
 				event.getDelta().accept(delta -> {
 					switch (delta.getKind()) {
-						case IResourceDelta.ADDED:
-						case IResourceDelta.CHANGED:
-							final IResource res = delta.getResource();
-							if (res != null && res.getFileExtension() != null) {
-								if (res.getFileExtension().endsWith("cryptsl")) {
-									changedCrySLElements.add(res);
-								}
-
+					case IResourceDelta.ADDED:
+					case IResourceDelta.CHANGED:
+						final IResource res = delta.getResource();
+						if (res != null && res.getFileExtension() != null) {
+							if (res.getFileExtension().endsWith("cryptsl")) {
+								changedCrySLElements.add(res);
 							}
+
+						}
 					}
 					return true;
 				});
-			} catch (final CoreException e) {}
+			} catch (final CoreException e) {
+			}
 
 			if (!changedCrySLElements.isEmpty()) {
 				try {
@@ -61,7 +73,8 @@ public class StartupHandler implements IStartup {
 
 	@Override
 	public void earlyStartup() {
-		ResourcesPlugin.getWorkspace().addResourceChangeListener(StartupHandler.BUILD_LISTENER, IResourceChangeEvent.POST_BUILD);
+		ResourcesPlugin.getWorkspace().addResourceChangeListener(StartupHandler.BUILD_LISTENER,
+				IResourceChangeEvent.POST_BUILD);
 	}
 
 }

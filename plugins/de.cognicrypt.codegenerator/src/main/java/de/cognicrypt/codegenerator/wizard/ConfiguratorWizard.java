@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2015-2018 TU Darmstadt
+ * 
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package de.cognicrypt.codegenerator.wizard;
 
 import java.io.File;
@@ -33,7 +43,6 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.generator.CodeGenerator;
 import de.cognicrypt.codegenerator.generator.CrySLBasedCodeGenerator;
 import de.cognicrypt.codegenerator.generator.CrySLComparator;
-import de.cognicrypt.codegenerator.generator.RuleDependencyTree;
 import de.cognicrypt.codegenerator.generator.XSLBasedGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
 import de.cognicrypt.codegenerator.question.ClaferDependency;
@@ -100,9 +109,10 @@ public class ConfiguratorWizard extends Wizard {
 	public boolean canFinish() {
 		final String pageName = getContainer().getCurrentPage().getName();
 		if (pageName.equals(Constants.DEFAULT_ALGORITHM_PAGE)) {
-			return (this.defaultAlgorithmPage.isDefaultAlgorithm());
+			return (!this.defaultAlgorithmPage.isDefaultAlgorithm());
 		}
 		return (pageName.equals(Constants.ALGORITHM_SELECTION_PAGE));
+
 	}
 
 	private boolean checkifInUpdateRound() {
@@ -202,7 +212,7 @@ public class ConfiguratorWizard extends Wizard {
 				this.beginnerQuestions = new BeginnerModeQuestionnaire(selectedTask, selectedTask.getQuestionsJSONFile());
 				this.preferenceSelectionPage = new BeginnerTaskQuestionPage(this.beginnerQuestions.nextPage(), this.beginnerQuestions.getTask(), null);
 			} else {
-				this.preferenceSelectionPage = new AdvancedUserValueSelectionPage(this.claferModel, (AstConcreteClafer) org.clafer.cli.Utils
+				this.preferenceSelectionPage = new AdvancedUserValueSelectionPage(this.claferModel, selectedTask, (AstConcreteClafer) org.clafer.cli.Utils
 					.getModelChildByName(this.claferModel.getModel(), "c0_" + selectedTask.getName()));
 			}
 			if (this.constraints != null) {
@@ -286,7 +296,7 @@ public class ConfiguratorWizard extends Wizard {
 				//instance list page will be added after advanced user value selection page in advanced mode.
 				//(default algorithm page is not added in advanced mode)
 				if (instanceGenerator.getNoOfInstances() > 0) {
-					this.instanceListPage = new InstanceListPage(instanceGenerator, this.constraints, this.taskListPage);
+					this.instanceListPage = new InstanceListPage(instanceGenerator, this.constraints, this.taskListPage, this.defaultAlgorithmPage);
 					addPage(this.instanceListPage);
 					return this.instanceListPage;
 
@@ -310,8 +320,8 @@ public class ConfiguratorWizard extends Wizard {
 				instanceGenerator.generateInstances(this.constraints);
 			}
 			//instance details page will be added after default algorithm page only if the number of instances is greater than 1
-			if (!this.defaultAlgorithmPage.isDefaultAlgorithm() && instanceGenerator.getNoOfInstances() > 1) {
-				this.instanceListPage = new InstanceListPage(instanceGenerator, this.constraints, this.taskListPage);
+			if (this.defaultAlgorithmPage.isDefaultAlgorithm() && instanceGenerator.getNoOfInstances() > 1) {
+				this.instanceListPage = new InstanceListPage(instanceGenerator, this.constraints, this.taskListPage, this.defaultAlgorithmPage);
 				addPage(this.instanceListPage);
 				return this.instanceListPage;
 			}
@@ -392,6 +402,9 @@ public class ConfiguratorWizard extends Wizard {
 		final DeveloperProject developerProject = codeGenerator.getDeveloperProject();
 
 		// Generate code template
+		ret &= codeGenerator.generateCodeTemplates(
+			new Configuration(instance, this.constraints, developerProject.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile),
+			selectedTask.getAdditionalResources());
 		Configuration chosenConfig = new Configuration(instance, this.constraints, developerProject
 			.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
 		String additionalResources = selectedTask.getAdditionalResources();

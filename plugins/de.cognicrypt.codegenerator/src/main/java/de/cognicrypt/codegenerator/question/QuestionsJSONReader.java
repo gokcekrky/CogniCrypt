@@ -1,3 +1,13 @@
+/********************************************************************************
+ * Copyright (c) 2015-2018 TU Darmstadt
+ * 
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ * 
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package de.cognicrypt.codegenerator.question;
 
 import java.io.BufferedReader;
@@ -98,7 +108,7 @@ public class QuestionsJSONReader {
 	 * @param pages
 	 *        List of all read pages
 	 */
-	private void checkReadPages(final List<Page> pages) {
+	public void checkReadPages(final List<Page> pages) {
 		final Set<Integer> ids = new HashSet<>();
 		if (pages.size() < 1) {
 			throw new IllegalArgumentException("There are no pages for this task.");
