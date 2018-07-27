@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IProject;
-import org.eclipse.jface.fieldassist.ControlDecoration;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ComboViewer;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -55,7 +54,6 @@ public class TaskSelectionPage extends WizardPage {
 
 	private Composite container;
 	private ComboViewer taskComboSelection;
-	private Button guidedModeCheckBox;
 	private IProject selectedProject = null;
 
 	public TaskSelectionPage() {
@@ -205,43 +203,12 @@ public class TaskSelectionPage extends WizardPage {
 		new Label(this.container, SWT.NONE);
 		new Label(this.container, SWT.NONE);
 
-		//Check box for going to guided mode
-		this.guidedModeCheckBox = new Button(this.container, SWT.CHECK);
-		this.guidedModeCheckBox.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 2, 1));
-		this.guidedModeCheckBox.setToolTipText(Constants.GUIDEDMODE_TOOLTIP);
-		this.guidedModeCheckBox.setEnabled(true);
-
-		//Show info icon when the user unchecks the Guided-mode checkbox
-		final ControlDecoration deco = new ControlDecoration(guidedModeCheckBox, SWT.RIGHT);
-		Image image = PlatformUI.getWorkbench().getSharedImages().getImage(ISharedImages.IMG_OBJS_INFO_TSK);
-		deco.setDescriptionText(Constants.GUIDED_MODE_CHECKBOX_INFO);
-		deco.hide();
-		deco.setImage(image);
-		deco.setShowOnlyOnFocus(false);
-
-		this.guidedModeCheckBox.addSelectionListener(new SelectionAdapter() {
-
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				if (guidedModeCheckBox.getSelection() != true) {
-					deco.show();
-				} else {
-					deco.hide();
-				}
-			}
-		});
-		this.guidedModeCheckBox.setText(Constants.GUIDED_MODE);
-		this.guidedModeCheckBox.setSelection(true);
-
 		sc.setContent(container);
 		sc.setExpandHorizontal(true);
 		sc.setExpandVertical(true);
 		sc.setMinSize(container.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		setControl(sc);
 
-		deco.setDescriptionText(Constants.GUIDED_MODE_CHECKBOX_INFO);
-		deco.setImage(image);
-		deco.setShowOnlyOnFocus(false);
 		//Primitive Integration
 		Button btnPrimitiveIntegration = new Button(container, SWT.NONE);
 		btnPrimitiveIntegration.addSelectionListener(new SelectionAdapter() {
@@ -257,6 +224,8 @@ public class TaskSelectionPage extends WizardPage {
 			}
 		});
 		btnPrimitiveIntegration.setText("Primitive Integration");
+		//Visibility SET TO FALSE. REMOVE FOLLOWING LINE WHEN WORKING ON TASK INTEGRATION.
+		btnPrimitiveIntegration.setVisible(false);
 		//Task Integration
 		Button btnTaskIntegration = new Button(container, SWT.NONE);
 		btnTaskIntegration.addSelectionListener(new SelectionAdapter() {
@@ -272,6 +241,9 @@ public class TaskSelectionPage extends WizardPage {
 			}
 		});
 		btnTaskIntegration.setText("Task Integration");
+		//Visibility SET TO FALSE. REMOVE FOLLOWING LINE WHEN WORKING ON PRIMITIVE INTEGRATION.
+		btnTaskIntegration.setVisible(false);
+
 		new Label(container, SWT.NONE);
 
 	}
@@ -284,14 +256,6 @@ public class TaskSelectionPage extends WizardPage {
 		return (Task) ((IStructuredSelection) this.taskComboSelection.getSelection()).getFirstElement();
 	}
 
-	/**
-	 * Helper method to UI , this flag decides the second page of the wizard.
-	 *
-	 * @return
-	 */
-	public boolean isGuidedMode() {
-		return this.guidedModeCheckBox.getSelection();
-	}
 
 	@Override
 	public void setVisible(final boolean visible) {
