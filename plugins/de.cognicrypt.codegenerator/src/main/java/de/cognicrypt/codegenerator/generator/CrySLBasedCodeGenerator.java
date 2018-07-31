@@ -54,11 +54,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 	public static Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
 	/**
-	 * Iterator over all possible transitions that describe the source code of the given rule.
-	 */
-//	
-
-	/**
 	 * Hash table to store the values that are assigend to variables.
 	 */
 	Hashtable<String, String> parameterValues = new Hashtable<String, String>();
@@ -110,6 +105,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	@Override
 	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
 		boolean next = true;
+		exceptions.add("GeneralSecurityException");
 		String genFolder = "";
 		try {
 			genFolder = this.project.getProjectPath() + Constants.innerFileSeparator + this.project
@@ -122,19 +118,18 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		Iterator<List<TransitionEdge>> transitions = null;
 		Map<String, List<CryptSLPredicate>> reliablePreds = new HashMap<String, List<CryptSLPredicate>>();
 		Map<String, List<String>> tmpUsagePars = new HashMap<String, List<String>>();
-		
-		
+
 		JavaCodeFile tmpOutputFile = new JavaCodeFile(Constants.AdditionalOutputFile);
 		tmpOutputFile.addCodeLine("package " + Constants.PackageName + ";");
 		tmpOutputFile.addCodeLine("public class Output {");
 		tmpOutputFile.addCodeLine("public void " + Constants.NameOfTemporaryMethod + "(");
-		
+
 		for (CryptSLRule rule : rules.values()) {
 			String usedClass = rule.getClassName();
 			String newClass = "CogniCrypt" + usedClass;
 			// get state machine of cryptsl rule
 			StateMachineGraph stateMachine = rule.getUsagePattern();
-			
+
 			List<CryptSLPredicate> usablePreds = new ArrayList<CryptSLPredicate>();
 			if (!reliablePreds.isEmpty() && !rule.getRequiredPredicates().isEmpty()) {
 				List<CryptSLPredicate> preds = rule.getRequiredPredicates();
@@ -143,7 +138,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 					usablePreds.addAll(l.getValue());
 				}
 			}
-			
+
 			// analyse state machine
 			StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
 			ArrayList<List<TransitionEdge>> transitionsList;
@@ -170,6 +165,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 				// Determine imports, method calls and thrown exceptions
 				ArrayList<String> imports = new ArrayList<String>(determineImports(currentTransitions));
+				imports.add("import java.security.GeneralSecurityException;");
 				ArrayList<String> methodInvocations = generateMethodInvocations(rule, currentTransitions, methodParametersOfSuperMethod, usablePreds, imports);
 
 				// Create code object that includes the generated java code
@@ -273,22 +269,22 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				//next = !(codeHandler.run(newClass, "use", null, null));
 
 				reliablePreds.put(rule.getClassName(), rule.getPredicates());
-				
+
 				next = false;
 
 			} while (next);
-			
+
 		}
-		
-		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList()); 
+
+		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList());
 		for (int i = 0; i < allParameters.size(); i++) {
-			tmpOutputFile.addCodeLine(allParameters.get(i) + (i < allParameters.size() -1 ? "," : ""));
+			tmpOutputFile.addCodeLine(allParameters.get(i) + (i < allParameters.size() - 1 ? "," : ""));
 		}
-		tmpOutputFile.addCodeLine(") {");
-		
+		tmpOutputFile.addCodeLine(") throws GeneralSecurityException {");
+
 		for (CryptSLRule rule : rules.values()) {
 			String newClass = "CogniCrypt" + rule.getClassName();
-			tmpOutputFile.addCodeLine(newClass + " " + newClass.toLowerCase() + " = new " + newClass + "();" );
+			tmpOutputFile.addCodeLine(newClass + " " + newClass.toLowerCase() + " = new " + newClass + "();");
 			String methodName = "use" + newClass;
 			tmpOutputFile.addCodeLine(newClass.toLowerCase() + "." + methodName + "(");
 			List<String> parList = tmpUsagePars.get(methodName);
@@ -297,7 +293,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			}
 			tmpOutputFile.addCodeLine(");");
 		}
-		
+
 		tmpOutputFile.addCodeLine("}");
 		tmpOutputFile.addCodeLine("}");
 		File writeToDisk = null;
@@ -306,25 +302,25 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			codeFileList.add(writeToDisk);
 			CodeHandler codeHandler = new CodeHandler(codeFileList);
 			final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-			final IFile outputFile = this.project.getIFile(this.project.getProjectPath() + Constants.innerFileSeparator + this.project.getSourcePath() + Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + writeToDisk.toPath().toString());
-			final IEditorPart editor = IDE.openEditor(page, outputFile);
+			final IFile outputFile = this.project.getIFile(this.project.getProjectPath() + Constants.innerFileSeparator + this.project
+				.getSourcePath() + Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + writeToDisk.toPath().toString());
+			final IEditorPart editor = IDE.openEditor(page, outputFile, PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getSite().getId());
 			cleanUpProject(editor);
 		} catch (Exception e) {
 			Activator.getDefault().logError(e);
 		}
-		
+
 		return codeFileList != null;
 	}
-
 
 	/**
 	 * This method generates a method invocation for every transition of a state machine that represents a cryptsl rule.
 	 * 
 	 * @param currentTransitions
 	 *        List of transitions that represents a cryptsl rule's state machine.
-	 * @param methodParametersOfSuperMethod 
-	 * @param usablePreds 
-	 * @param imports 
+	 * @param methodParametersOfSuperMethod
+	 * @param usablePreds
+	 * @param imports
 	 */
 	private ArrayList<String> generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<CryptSLPredicate> usablePreds, List<String> imports) {
 		// Determine possible valid parameter values be analysing
@@ -336,7 +332,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		for (TransitionEdge transition : currentTransitions) {
 
 			CryptSLMethod method = null;
-			
+
 			for (CryptSLMethod meth : transition.getLabel()) {
 				if (method != null) {
 					break;
@@ -349,7 +345,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 							break;
 						}
 					}
-					
+
 				}
 			}
 			// Determine method name and signature
@@ -357,7 +353,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				method = transition.getLabel().get(0);
 			}
 			String methodName = method.getMethodName();
-			methodName  = methodName.substring(methodName.lastIndexOf(".") + 1);
+			methodName = methodName.substring(methodName.lastIndexOf(".") + 1);
 
 			// Determine parameter of method.
 			List<Entry<String, String>> parameters = method.getParameters();
@@ -460,7 +456,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		String methodInvocation = "";
 
 		String instanceName = className.substring(0, 1).toLowerCase() + className.substring(1);
-		
+
 		// 1. Constructor method calls
 		// 2. Static method calls
 		// 3. Instance method calls
@@ -565,8 +561,8 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * 
 	 * @param currentInvokedMethod
 	 *        Method invocation as string
-	 * @param methodParametersOfSuperMethod 
-	 * @param imports 
+	 * @param methodParametersOfSuperMethod
+	 * @param imports
 	 * 
 	 * @return New method invocation as string (parameter names are replaces by values)
 	 */
@@ -788,7 +784,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * 
 	 * @param methodParameters
 	 *        Parameter of method to identify the method by their signature.
-	 * @param imports 
+	 * @param imports
 	 * 
 	 * @throws NoSuchMethodException
 	 * @throws SecurityException

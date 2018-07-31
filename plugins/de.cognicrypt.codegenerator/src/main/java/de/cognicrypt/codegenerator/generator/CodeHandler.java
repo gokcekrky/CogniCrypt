@@ -14,9 +14,9 @@ import javax.tools.StandardJavaFileManager;
 
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 
-
 /**
  * A Code object contains java code source files. This files can be compiled during runtime with the method compile() and afterwards be executed by using the method run(...)
+ *
  * @author Florian Breitfelder
  * @author Stefan Krueger
  */

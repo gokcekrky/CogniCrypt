@@ -54,7 +54,6 @@ public class XSLBasedGenerator extends CodeGenerator {
 	 * @param pathToXSLFile
 	 *        Path to the XSL file is read from the Tasks.json file instead of a constant.
 	 */
-
 	public XSLBasedGenerator(final IProject targetProject, final String pathToXSLFile) {
 		super(targetProject);
 		xslFile = CodeGenUtils.getResourceFromWithin(pathToXSLFile);

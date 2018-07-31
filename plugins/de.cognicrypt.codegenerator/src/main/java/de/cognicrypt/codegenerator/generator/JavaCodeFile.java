@@ -9,10 +9,8 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
-import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 
 /**
@@ -58,22 +56,10 @@ public class JavaCodeFile {
 		TextEdit textEdit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, javaCode, 0, javaCode.length(), 0, System.getProperty("line.separator"));
 		IDocument document = new Document(javaCode);
 
-		try {
-			textEdit.apply(document);
-			System.out.println(document.get());
-		} catch (MalformedTreeException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BadLocationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		textEdit.apply(document);
+		System.out.println(document.get());
 		(new File(filePath)).mkdirs();
 		try (FileOutputStream fileOutputStream = new FileOutputStream(filePath + javaCodeFile)) {
-
 			fileOutputStream.write(document.get().getBytes());
 		} catch (Exception e) {
 			throw new Exception("Writing source code to file failed.");
