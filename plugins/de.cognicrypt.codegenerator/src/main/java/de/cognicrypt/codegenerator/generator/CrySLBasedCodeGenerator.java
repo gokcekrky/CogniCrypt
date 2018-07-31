@@ -77,10 +77,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		for (String ruleName : genRules) {
 			rules.put(ruleName, getCryptSLRule(ruleName));
 		}
-
-		// initialise code generator
-		init();
-
 	}
 
 	/**
@@ -242,7 +238,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				}
 				codeFileList = new File[] { codeFile };
 
-				// TODO
 				// Compiling is enabled for testing
 				CodeHandler codeHandler = new CodeHandler(codeFileList);
 				//codeHandler.compile();
@@ -259,23 +254,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		return codeFileList != null;
 	}
 
-	/**
-	 * This method initialises the a new CodeGenerator object and is invoked by the constructor.
-	 * 
-	 * @throws Exception
-	 */
-	private void init() throws Exception {
-
-	}
-
-	/**
-	 * The method hasNext() returns true if it exists a further variation of code that describes the given API-rule.
-	 * 
-	 * @return true, if it exists a further variation of code that describes the given API-rule, otherwise false.
-	 */
-//	public boolean hasNext() {
-//		return this.transitions.hasNext();
-//	}
 
 	/**
 	 * This method generates a method invocation for every transition of a state machine that represents a cryptsl rule.
@@ -313,7 +291,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				}
 			}
 			// Determine method name and signature
-			// ################################################################
 			if (method == null) {
 				method = transition.getLabel().get(0);
 			}
@@ -794,7 +771,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	}
 
 	/**
-	 * TODO resolve sub types
 	 * 
 	 * This method should determine subclasses to resolve sub types of interfaces. A possible approach is to use "reflections" (https://code.google.com/archive/p/reflections/) by
 	 * adding
