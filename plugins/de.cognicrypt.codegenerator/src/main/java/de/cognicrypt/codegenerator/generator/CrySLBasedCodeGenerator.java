@@ -16,9 +16,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.Set;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.IDE;
 
 import crypto.interfaces.ISLConstraint;
 import crypto.rules.CryptSLConstraint;
@@ -102,9 +110,25 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	@Override
 	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
 		boolean next = true;
-		File[] codeFileList = null;
+		String genFolder = "";
+		try {
+			genFolder = this.project.getProjectPath() + Constants.innerFileSeparator + this.project
+				.getSourcePath() + Constants.CodeGenerationCallFolder + Constants.innerFileSeparator;
+		} catch (CoreException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		List<File> codeFileList = null;
 		Iterator<List<TransitionEdge>> transitions = null;
 		Map<String, List<CryptSLPredicate>> reliablePreds = new HashMap<String, List<CryptSLPredicate>>();
+		Map<String, List<String>> tmpUsagePars = new HashMap<String, List<String>>();
+		
+		
+		JavaCodeFile tmpOutputFile = new JavaCodeFile(Constants.AdditionalOutputFile);
+		tmpOutputFile.addCodeLine("package " + Constants.PackageName + ";");
+		tmpOutputFile.addCodeLine("public class Output {");
+		tmpOutputFile.addCodeLine("public void " + Constants.NameOfTemporaryMethod + "(");
+		
 		for (CryptSLRule rule : rules.values()) {
 			String usedClass = rule.getClassName();
 			String newClass = "CogniCrypt" + usedClass;
@@ -174,11 +198,13 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				String methodDefintion = "public " + returnType + " " + methodName + "(";
 
 				Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
-
+				tmpUsagePars.put(methodName, new ArrayList<String>());
 				do {
 					if (iMethodParameters.hasNext()) {
 						Entry<String, String> parameter = iMethodParameters.next();
-						methodDefintion = methodDefintion + parameter.getValue() + " " + parameter.getKey();
+						String methParameter = parameter.getValue() + " " + parameter.getKey();
+						methodDefintion = methodDefintion + methParameter;
+						tmpUsagePars.get(methodName).add(methParameter);
 					}
 
 					// if a further parameters exist separate them by comma.
@@ -231,15 +257,16 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// ################################################################
 				File codeFile = null;
 				try {
-					codeFile = javaCodeFile.writeToDisk(this.project.getProjectPath() + Constants.innerFileSeparator + this.project
-						.getSourcePath() + Constants.CodeGenerationCallFolder + Constants.innerFileSeparator);
+					codeFile = javaCodeFile.writeToDisk(genFolder);
 				} catch (Exception e) {
 					Activator.getDefault().logError(e);
 				}
-				codeFileList = new File[] { codeFile };
+				if (codeFileList == null) {
+					codeFileList = new ArrayList<File>();
+				}
+				codeFileList.add(codeFile);
 
 				// Compiling is enabled for testing
-				CodeHandler codeHandler = new CodeHandler(codeFileList);
 				//codeHandler.compile();
 
 				// execute code
@@ -250,7 +277,42 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				next = false;
 
 			} while (next);
+			
 		}
+		
+		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList()); 
+		for (int i = 0; i < allParameters.size(); i++) {
+			tmpOutputFile.addCodeLine(allParameters.get(i) + (i < allParameters.size() -1 ? "," : ""));
+		}
+		tmpOutputFile.addCodeLine(") {");
+		
+		for (CryptSLRule rule : rules.values()) {
+			String newClass = "CogniCrypt" + rule.getClassName();
+			tmpOutputFile.addCodeLine(newClass + " " + newClass.toLowerCase() + " = new " + newClass + "();" );
+			String methodName = "use" + newClass;
+			tmpOutputFile.addCodeLine(newClass.toLowerCase() + "." + methodName + "(");
+			List<String> parList = tmpUsagePars.get(methodName);
+			for (int i = 0; i < parList.size(); i++) {
+				tmpOutputFile.addCodeLine(parList.get(i).split(" ")[1] + (i < tmpUsagePars.size() - 1 ? "," : ""));
+			}
+			tmpOutputFile.addCodeLine(");");
+		}
+		
+		tmpOutputFile.addCodeLine("}");
+		tmpOutputFile.addCodeLine("}");
+		File writeToDisk = null;
+		try {
+			writeToDisk = tmpOutputFile.writeToDisk(genFolder);
+			codeFileList.add(writeToDisk);
+			CodeHandler codeHandler = new CodeHandler(codeFileList);
+			final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			final IFile outputFile = this.project.getIFile(this.project.getProjectPath() + Constants.innerFileSeparator + this.project.getSourcePath() + Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + writeToDisk.toPath().toString());
+			final IEditorPart editor = IDE.openEditor(page, outputFile);
+			cleanUpProject(editor);
+		} catch (Exception e) {
+			Activator.getDefault().logError(e);
+		}
+		
 		return codeFileList != null;
 	}
 

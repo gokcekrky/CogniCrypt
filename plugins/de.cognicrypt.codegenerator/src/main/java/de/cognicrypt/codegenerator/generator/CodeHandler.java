@@ -5,34 +5,37 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
-// TODO fix warning
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 
 
 /**
  * A Code object contains java code source files. This files can be compiled during runtime with the method compile() and afterwards be executed by using the method run(...)
+ * @author Florian Breitfelder
+ * @author Stefan Krueger
  */
+@SuppressWarnings("restriction")
 public class CodeHandler {
 
-	private File[] javaCodeFiles;
-	private File[] classFiles;
+	private List<File> javaCodeFiles;
+	private List<File> classFiles;
 	private boolean isCodeCompiled = false;
 
 	/**
 	 * constructor
 	 * 
-	 * @param javaCodeFiles
+	 * @param codeFileList
 	 *        Array of file objects that include java code
 	 */
-	public CodeHandler(File[] javaCodeFiles) {
-		this.javaCodeFiles = javaCodeFiles;
-		classFiles = new File[javaCodeFiles.length];
+	public CodeHandler(List<File> codeFileList) {
+		this.javaCodeFiles = codeFileList;
+		classFiles = new ArrayList<File>();
 	}
 
 	/**
@@ -43,23 +46,22 @@ public class CodeHandler {
 	 * @throws CompilationFailedException
 	 *         If the compilation process was not successful an exception is thrown.
 	 */
-	public File[] compile() throws CompilationFailedException, RuntimeException, IllegalStateException {
+	public List<File> compile() throws CompilationFailedException, RuntimeException, IllegalStateException {
 		// setup compiler
-		// FIXME warning
 		JavaCompiler compiler = new EclipseCompiler();
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(Arrays.asList(javaCodeFiles));
+		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(javaCodeFiles);
 
 		// start compilation process
 		boolean state = compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
 
 		if (state) { // if the compilation process was successful return list of
 					// class files
-			for (int i = 0; i < javaCodeFiles.length; i++) {
-				String path = javaCodeFiles[i].getAbsolutePath();
+			for (int i = 0; i < javaCodeFiles.size(); i++) {
+				String path = javaCodeFiles.get(i).getAbsolutePath();
 				path = path.substring(0, path.lastIndexOf(".")) + ".class";
 
-				classFiles[i] = new File(path);
+				classFiles.add(i, new File(path));
 			}
 
 			isCodeCompiled = true;
@@ -101,11 +103,11 @@ public class CodeHandler {
 		}
 
 		// get urls of class file paths
-		URL[] urls = new URL[classFiles.length];
+		URL[] urls = new URL[classFiles.size()];
 
-		for (int i = 0; i < classFiles.length; i++) {
+		for (int i = 0; i < classFiles.size(); i++) {
 			// get path to class file
-			String path = classFiles[i].getAbsoluteFile().toString();
+			String path = classFiles.get(i).getAbsoluteFile().toString();
 			path = path.substring(0, path.lastIndexOf("\\") + 1);
 
 			try {
