@@ -121,6 +121,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 		JavaCodeFile tmpOutputFile = new JavaCodeFile(Constants.AdditionalOutputFile);
 		tmpOutputFile.addCodeLine("package " + Constants.PackageName + ";");
+		for (String imp : Constants.xmlimportsarr) {
+			tmpOutputFile.addCodeLine("import " + imp + ";");
+		}
 		tmpOutputFile.addCodeLine("public class Output {");
 		tmpOutputFile.addCodeLine("public void " + Constants.NameOfTemporaryMethod + "(");
 
@@ -165,7 +168,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 				// Determine imports, method calls and thrown exceptions
 				ArrayList<String> imports = new ArrayList<String>(determineImports(currentTransitions));
-				imports.add("import java.security.GeneralSecurityException;");
+				for (String imp : Constants.xmlimportsarr) {
+					imports.add("import " + imp + ";");
+				}
 				ArrayList<String> methodInvocations = generateMethodInvocations(rule, currentTransitions, methodParametersOfSuperMethod, usablePreds, imports);
 
 				// Create code object that includes the generated java code
@@ -302,10 +307,11 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			codeFileList.add(writeToDisk);
 			CodeHandler codeHandler = new CodeHandler(codeFileList);
 			final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			cleanUpProject(page.getActiveEditor());
 			final IFile outputFile = this.project.getIFile(this.project.getProjectPath() + Constants.innerFileSeparator + this.project
 				.getSourcePath() + Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + writeToDisk.toPath().toString());
-			final IEditorPart editor = IDE.openEditor(page, outputFile, PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getSite().getId());
-			cleanUpProject(editor);
+			IDE.openEditor(page, outputFile, PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getSite().getId());
+			
 		} catch (Exception e) {
 			Activator.getDefault().logError(e);
 		}
