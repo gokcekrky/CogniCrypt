@@ -61,7 +61,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	/**
 	 * Contains the exceptions classes that are thrown by the generated code.
 	 */
-	private ArrayList<String> exceptions = new ArrayList<String>();
+	private List<String> exceptions = new ArrayList<String>();
+	
+	private Map<String, String> methToReturnValue = new HashMap<String, String>();
 
 	/**
 	 * This constructor allows it to set a specific class and method names that are used in the generated Java code.
@@ -111,8 +113,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			genFolder = this.project.getProjectPath() + Constants.innerFileSeparator + this.project
 				.getSourcePath() + Constants.CodeGenerationCallFolder + Constants.innerFileSeparator;
 		} catch (CoreException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			Activator.getDefault().logError(e1);
 		}
 		List<File> codeFileList = null;
 		Iterator<List<TransitionEdge>> transitions = null;
@@ -133,12 +134,12 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			// get state machine of cryptsl rule
 			StateMachineGraph stateMachine = rule.getUsagePattern();
 
-			List<CryptSLPredicate> usablePreds = new ArrayList<CryptSLPredicate>();
+			Entry<String, List<CryptSLPredicate>> usablePreds = null;
 			if (!reliablePreds.isEmpty() && !rule.getRequiredPredicates().isEmpty()) {
 				List<CryptSLPredicate> preds = rule.getRequiredPredicates();
 				for (Entry<String, List<CryptSLPredicate>> l : reliablePreds.entrySet()) {
 					preds.retainAll(l.getValue());
-					usablePreds.addAll(l.getValue());
+					usablePreds = new SimpleEntry<String, List<CryptSLPredicate>>(l.getKey(), preds);
 				}
 			}
 
@@ -148,7 +149,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			try {
 				transitionsList = stateMachineGraphAnalyser.getTransitions();
 				transitionsList.sort(new Comparator<List<TransitionEdge>>() {
-					// sort paths by number of nodes
 
 					@Override
 					public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
@@ -283,7 +283,10 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList());
 		for (int i = 0; i < allParameters.size(); i++) {
-			tmpOutputFile.addCodeLine(allParameters.get(i) + (i < allParameters.size() - 1 ? "," : ""));
+			String parName = allParameters.get(i);
+			if (!methToReturnValue.values().contains(parName.split(" ")[1])) {
+				tmpOutputFile.addCodeLine(parName + (i < allParameters.size() - 1 ? "," : ""));
+			}
 		}
 		tmpOutputFile.addCodeLine(") throws GeneralSecurityException {");
 
@@ -291,7 +294,16 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			String newClass = "CogniCrypt" + rule.getClassName();
 			tmpOutputFile.addCodeLine(newClass + " " + newClass.toLowerCase() + " = new " + newClass + "();");
 			String methodName = "use" + newClass;
+			if (methToReturnValue.keySet().contains(methodName)) {
+				for (int i = 0; i < allParameters.size(); i++) {
+					String parName = allParameters.get(i);
+					if (methToReturnValue.values().contains(parName.split(" ")[1])) {
+						tmpOutputFile.addCodeLine(parName + " = ");
+					}
+				}
+			}
 			tmpOutputFile.addCodeLine(newClass.toLowerCase() + "." + methodName + "(");
+			
 			List<String> parList = tmpUsagePars.get(methodName);
 			for (int i = 0; i < parList.size(); i++) {
 				tmpOutputFile.addCodeLine(parList.get(i).split(" ")[1] + (i < tmpUsagePars.size() - 1 ? "," : ""));
@@ -328,7 +340,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * @param usablePreds
 	 * @param imports
 	 */
-	private ArrayList<String> generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<CryptSLPredicate> usablePreds, List<String> imports) {
+	private ArrayList<String> generateMethodInvocations(CryptSLRule rule, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, Entry<String, List<CryptSLPredicate>> usablePreds, List<String> imports) {
 		// Determine possible valid parameter values be analysing
 		// the given constraints
 		// ################################################################
@@ -343,15 +355,18 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				if (method != null) {
 					break;
 				}
-				for (CryptSLPredicate usablePred : usablePreds) {
-					String predVarName = usablePred.getParameters().get(0).getName();
-					for (Entry<String, String> o : meth.getParameters()) {
-						if (predVarName.equals(o.getKey())) {
-							method = meth;
-							break;
+				if (usablePreds != null) {
+					for (CryptSLPredicate usablePred : usablePreds.getValue()) {
+						String predVarName = usablePred.getParameters().get(0).getName();
+						for (Entry<String, String> o : meth.getParameters()) {
+							if (predVarName.equals(o.getKey())) {
+								methToReturnValue.put("useCogniCrypt" + usablePreds.getKey(), predVarName);
+								method = meth;
+								break;
+							}
 						}
+	
 					}
-
 				}
 			}
 			// Determine method name and signature
