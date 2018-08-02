@@ -1,8 +1,6 @@
 package de.cognicrypt.codegenerator.generator;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.ObjectInputStream;
 import java.lang.reflect.Method;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -16,14 +14,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
@@ -41,8 +37,8 @@ import crypto.rules.StateMachineGraph;
 import crypto.rules.TransitionEdge;
 import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.codegenerator.wizard.Configuration;
+import de.cognicrypt.codegenerator.wizard.CrySLConfiguration;
 import de.cognicrypt.core.Constants;
-import de.cognicrypt.utils.Utils;
 
 /**
  * 
@@ -52,7 +48,7 @@ import de.cognicrypt.utils.Utils;
  */
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
-	public static Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
+	private Hashtable<String, CryptSLRule> rules = new Hashtable<String, CryptSLRule>();
 	/**
 	 * Hash table to store the values that are assigend to variables.
 	 */
@@ -62,7 +58,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * Contains the exceptions classes that are thrown by the generated code.
 	 */
 	private List<String> exceptions = new ArrayList<String>();
-	
+
 	private Map<String, String> methToReturnValue = new HashMap<String, String>();
 
 	/**
@@ -77,35 +73,19 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * @throws Exception
 	 */
 
-	public CrySLBasedCodeGenerator(IProject targetProject, List<String> genRules) throws Exception {
+	public CrySLBasedCodeGenerator(IProject targetProject) throws Exception {
 		super(targetProject);
-		for (String ruleName : genRules) {
-			rules.put(ruleName, getCryptSLRule(ruleName));
-		}
-	}
 
-	/**
-	 * Returns the cryptsl rule with the name that is defined by the method parameter cryptslRule.
-	 * 
-	 * @param cryptslRule
-	 *        Name of cryptsl rule that should by returend.
-	 * 
-	 * @return Returns the cryptsl rule with the name that is defined by the parameter cryptslRule.
-	 * @throws Exception
-	 *         Thows an exception if given rule name does not exist.
-	 */
-	public static CryptSLRule getCryptSLRule(String cryptslRule) throws Exception {
-		final FileInputStream fileIn = new FileInputStream(Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID)
-			.getAbsolutePath() + "\\" + cryptslRule + ".cryptslbin");
-		final ObjectInputStream in = new ObjectInputStream(fileIn);
-		CryptSLRule rule = (CryptSLRule) in.readObject();
-		in.close();
-		fileIn.close();
-		return rule;
 	}
 
 	@Override
 	public boolean generateCodeTemplates(Configuration chosenConfig, String pathToFolderWithAdditionalResources) {
+		if (chosenConfig instanceof CrySLConfiguration) {
+			for (CryptSLRule rule : ((CrySLConfiguration) chosenConfig).getRules()) {
+				this.rules.put(rule.getClassName(), rule);
+			}
+		}
+
 		boolean next = true;
 		exceptions.add("GeneralSecurityException");
 		String genFolder = "";
@@ -115,19 +95,25 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		} catch (CoreException e1) {
 			Activator.getDefault().logError(e1);
 		}
-		List<File> codeFileList = null;
-		Iterator<List<TransitionEdge>> transitions = null;
+		List<GeneratorClass> generatedClasses = new ArrayList<GeneratorClass>();
 		Map<String, List<CryptSLPredicate>> reliablePreds = new HashMap<String, List<CryptSLPredicate>>();
 		Map<String, List<String>> tmpUsagePars = new HashMap<String, List<String>>();
 
-		JavaCodeFile tmpOutputFile = new JavaCodeFile(Constants.AdditionalOutputFile);
-		tmpOutputFile.addCodeLine("package " + Constants.PackageName + ";");
-		for (String imp : Constants.xmlimportsarr) {
-			tmpOutputFile.addCodeLine("import " + imp + ";");
-		}
-		tmpOutputFile.addCodeLine("public class Output {");
-		tmpOutputFile.addCodeLine("public void " + Constants.NameOfTemporaryMethod + "(");
+		GeneratorClass templateClass = new GeneratorClass();
+		templateClass.setPackageName(Constants.PackageName);
 
+		for (String imp : Constants.xmlimportsarr) {
+			templateClass.addImport(imp);
+		}
+		templateClass.setClassName("Output");
+		templateClass.setModifier("public");
+		GeneratorMethod tmplUsage = new GeneratorMethod();
+		templateClass.addMethod(tmplUsage);
+		tmplUsage.setModifier("public");
+		tmplUsage.setReturnType("void");
+		tmplUsage.setName(Constants.NameOfTemporaryMethod);
+
+		Iterator<List<TransitionEdge>> transitions = null;
 		for (CryptSLRule rule : rules.values()) {
 			String usedClass = rule.getClassName();
 			String newClass = "CogniCrypt" + usedClass;
@@ -169,112 +155,68 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// Determine imports, method calls and thrown exceptions
 				ArrayList<String> imports = new ArrayList<String>(determineImports(currentTransitions));
 				for (String imp : Constants.xmlimportsarr) {
-					imports.add("import " + imp + ";");
+					imports.add(imp);
 				}
 				ArrayList<String> methodInvocations = generateMethodInvocations(rule, currentTransitions, methodParametersOfSuperMethod, usablePreds, imports);
 
 				// Create code object that includes the generated java code
-				JavaCodeFile javaCodeFile = new JavaCodeFile(newClass + ".java");
+				GeneratorClass ruleClass = new GeneratorClass();
+				ruleClass.setClassName(newClass);
 
 				// generate Java code
 				// ################################################################
 
-				javaCodeFile.addCodeLine("package " + Constants.PackageName + ";");
+				ruleClass.setPackageName(Constants.PackageName);
 
 				// first add imports
 				for (String ip : imports) {
-					javaCodeFile.addCodeLine(ip);
+					ruleClass.addImport(ip);
 				}
 
 				// class definition
-				javaCodeFile.addCodeLine("public class " + newClass + " {");
+				ruleClass.setModifier("public");
+				;
 
 				// method definition
 				// ################################################################
 
-				String methodName = "use" + newClass;
-
-				String returnType = getReturnType(currentTransitions, usedClass);
-
-				String methodDefintion = "public " + returnType + " " + methodName + "(";
+				GeneratorMethod useMethod = new GeneratorMethod();
+				useMethod.setName("use" + newClass);
+				useMethod.setReturnType(getReturnType(currentTransitions, usedClass));
+				useMethod.setModifier("public");
 
 				Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
-				tmpUsagePars.put(methodName, new ArrayList<String>());
+				tmpUsagePars.put(useMethod.getName(), new ArrayList<String>());
 				do {
 					if (iMethodParameters.hasNext()) {
 						Entry<String, String> parameter = iMethodParameters.next();
-						String methParameter = parameter.getValue() + " " + parameter.getKey();
-						methodDefintion = methodDefintion + methParameter;
-						tmpUsagePars.get(methodName).add(methParameter);
-					}
-
-					// if a further parameters exist separate them by comma.
-					if (iMethodParameters.hasNext()) {
-						methodDefintion = methodDefintion + ", ";
+						useMethod.addParameter(parameter);
+						tmpUsagePars.get(useMethod.getName()).add(parameter.getValue() + " " + parameter.getKey());
 					}
 
 				} while (iMethodParameters.hasNext());
 
-				methodDefintion = methodDefintion + ") ";
-
 				// add thrown exceptions
-				if (exceptions.size() > 0) {
-					methodDefintion = methodDefintion + "throws ";
-
-					Iterator<String> iExceptions = exceptions.iterator();
-
-					do {
-						String exception = iExceptions.next();
-						methodDefintion = methodDefintion + exception;
-
-						// if a further exception class follows separate them by comma
-						if (iExceptions.hasNext()) {
-							methodDefintion = methodDefintion + ", ";
-						}
-
-					} while (iExceptions.hasNext());
-
+				for (String exc : exceptions) {
+					useMethod.addException(exc);
 				}
-
-				methodDefintion = methodDefintion + " {";
-
-				javaCodeFile.addCodeLine(methodDefintion);
 
 				// add method body
 
 				// first method code line for test reasons
-				javaCodeFile.addCodeLine("System.out.println(\"Method is running :-)\");");
+				useMethod.addStatementToBody("System.out.println(\"Method is running :-)\");");
 
 				for (String methodInvocation : methodInvocations) {
-					javaCodeFile.addCodeLine(methodInvocation);
+					useMethod.addStatementToBody(methodInvocation);
 				}
-
-				// close method definition
-				javaCodeFile.addCodeLine("}");
-				// close class definition
-				javaCodeFile.addCodeLine("}");
 
 				// compile code
 				// ################################################################
-				File codeFile = null;
-				try {
-					codeFile = javaCodeFile.writeToDisk(genFolder);
-				} catch (Exception e) {
-					Activator.getDefault().logError(e);
-				}
-				if (codeFileList == null) {
-					codeFileList = new ArrayList<File>();
-				}
-				codeFileList.add(codeFile);
+				ruleClass.addMethod(useMethod);
+				generatedClasses.add(ruleClass);
 
-				// Compiling is enabled for testing
-				//codeHandler.compile();
-
-				// execute code
-				//next = !(codeHandler.run(newClass, "use", null, null));
 
 				reliablePreds.put(rule.getClassName(), rule.getPredicates());
-
 				next = false;
 
 			} while (next);
@@ -284,51 +226,56 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList());
 		for (int i = 0; i < allParameters.size(); i++) {
 			String parName = allParameters.get(i);
-			if (!methToReturnValue.values().contains(parName.split(" ")[1])) {
-				tmpOutputFile.addCodeLine(parName + (i < allParameters.size() - 1 ? "," : ""));
+			String[] parPair = parName.split(" ");
+			if (!methToReturnValue.values().contains(parPair[1])) {
+				tmplUsage.addParameter(new SimpleEntry<String, String>(parPair[1], parPair[0]));
 			}
 		}
-		tmpOutputFile.addCodeLine(") throws GeneralSecurityException {");
+		tmplUsage.addException("GeneralSecurityException");
 
-		for (CryptSLRule rule : rules.values()) {
-			String newClass = "CogniCrypt" + rule.getClassName();
-			tmpOutputFile.addCodeLine(newClass + " " + newClass.toLowerCase() + " = new " + newClass + "();");
-			String methodName = "use" + newClass;
+		for (int j = 0; j < generatedClasses.size(); j++) {
+			GeneratorClass generatedClass = generatedClasses.get(j);
+			String className = generatedClass.getClassName();
+			tmplUsage.addStatementToBody(className + " " + className.toLowerCase() + " = new " + className + "();");
+			
+			String methodName = "use" + className;
 			if (methToReturnValue.keySet().contains(methodName)) {
 				for (int i = 0; i < allParameters.size(); i++) {
 					String parName = allParameters.get(i);
 					if (methToReturnValue.values().contains(parName.split(" ")[1])) {
-						tmpOutputFile.addCodeLine(parName + " = ");
+						tmplUsage.addStatementToBody(parName + " = ");
 					}
 				}
 			}
-			tmpOutputFile.addCodeLine(newClass.toLowerCase() + "." + methodName + "(");
-			
+			String useMethodReturnType = generatedClass.getMethods().get(0).getReturnType();
+			if (j == generatedClasses.size() -1 && !useMethodReturnType.equals("void")) {
+				tmplUsage.addStatementToBody("return ");
+				tmplUsage.setReturnType(useMethodReturnType);
+			}
+			tmplUsage.addStatementToBody(className.toLowerCase() + "." + methodName + "(");
+
 			List<String> parList = tmpUsagePars.get(methodName);
 			for (int i = 0; i < parList.size(); i++) {
-				tmpOutputFile.addCodeLine(parList.get(i).split(" ")[1] + (i < tmpUsagePars.size() - 1 ? "," : ""));
+				tmplUsage.addStatementToBody(parList.get(i).split(" ")[1] + (i < tmpUsagePars.size() - 1 ? "," : ""));
 			}
-			tmpOutputFile.addCodeLine(");");
+			tmplUsage.addStatementToBody(");");
+			
 		}
 
-		tmpOutputFile.addCodeLine("}");
-		tmpOutputFile.addCodeLine("}");
-		File writeToDisk = null;
+		
+		generatedClasses.add(templateClass);
+		CodeHandler codeHandler = new CodeHandler(generatedClasses);
+		final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		try {
-			writeToDisk = tmpOutputFile.writeToDisk(genFolder);
-			codeFileList.add(writeToDisk);
-			CodeHandler codeHandler = new CodeHandler(codeFileList);
-			final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			codeHandler.writeToDisk(genFolder);
 			cleanUpProject(page.getActiveEditor());
-			final IFile outputFile = this.project.getIFile(this.project.getProjectPath() + Constants.innerFileSeparator + this.project
-				.getSourcePath() + Constants.innerFileSeparator + Constants.PackageName + Constants.innerFileSeparator + writeToDisk.toPath().toString());
+			final IFile outputFile = this.project.getIFile(templateClass.getAssociatedJavaFile().getAbsolutePath());
 			IDE.openEditor(page, outputFile, PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getSite().getId());
-			
 		} catch (Exception e) {
 			Activator.getDefault().logError(e);
 		}
 
-		return codeFileList != null;
+		return generatedClasses != null;
 	}
 
 	/**
@@ -365,7 +312,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 								break;
 							}
 						}
-	
+
 					}
 				}
 			}
@@ -633,7 +580,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				if (parameter.getValue().contains(".")) {
 					methodParametersOfSuperMethod
 						.add(new SimpleEntry<String, String>(parameter.getKey(), parameter.getValue().substring(parameter.getValue().lastIndexOf(".") + 1)));
-					imports.add("import " + parameter.getValue() + ";");
+					imports.add(parameter.getValue());
 				} else {
 					methodParametersOfSuperMethod.add(parameter);
 				}
@@ -789,7 +736,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		Set<String> imports = new HashSet<String>();
 		for (TransitionEdge transition : transitions) {
 			String completeMethodName = transition.getLabel().get(0).getMethodName();
-			imports.add("import " + completeMethodName.substring(0, completeMethodName.lastIndexOf(".")) + ";");
+			imports.add(completeMethodName.substring(0, completeMethodName.lastIndexOf(".")));
 		}
 		return imports;
 	}
@@ -825,10 +772,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		//.getMethod(methodName, methodParameters).getExceptionTypes();
 		for (Class<?> exception : exceptionClasses) {
 
-			String exceptionImport = "import " + exception.getName() + ";";
-			if (!exceptions.contains(exceptionImport)) {
-				imports.add(exceptionImport);
-			}
+			imports.add(exception.getName());
 
 			String exceptionClass = exception.getSimpleName();
 			if (!exceptions.contains(exceptionClass)) {

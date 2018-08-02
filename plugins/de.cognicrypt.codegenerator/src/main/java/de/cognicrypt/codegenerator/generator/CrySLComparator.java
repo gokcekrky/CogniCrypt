@@ -1,20 +1,20 @@
 package de.cognicrypt.codegenerator.generator;
 
 import java.util.Comparator;
-import java.util.List;
 
 import crypto.rules.CryptSLRule;
+import de.cognicrypt.utils.Utils;
 
 
-public class CrySLComparator implements Comparator<String> {
-	private final RuleDependencyTree rdt;
+public class CrySLComparator implements Comparator<CryptSLRule> {
+	RuleDependencyTree rdt;
 	
-	public CrySLComparator(List<CryptSLRule> list) {
-		rdt = new RuleDependencyTree(list);
+	public CrySLComparator() {
+		rdt  = new RuleDependencyTree(Utils.readCrySLRules());
 	}
 	
 	@Override
-	public int compare(String left, String right) {
+	public int compare(CryptSLRule left, CryptSLRule right) {
 		if (rdt.hasPath(left, right)) {
 			return -1;
 		} else if (rdt.hasPath(right, left)) {

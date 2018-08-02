@@ -15,8 +15,7 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.workbench,
  org.apache.commons.io;bundle-version="2.2.0",
  org.eclipse.ui.workbench,
- de.cognicrypt.core;bundle-version="1.0.0",
- de.cognicrypt.crysl.handler
+ de.cognicrypt.core;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: lib/claferchocoig.jar,

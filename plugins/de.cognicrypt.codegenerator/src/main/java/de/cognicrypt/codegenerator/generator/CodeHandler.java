@@ -1,18 +1,23 @@
 package de.cognicrypt.codegenerator.generator;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
+
+import de.cognicrypt.codegenerator.Activator;
+import de.cognicrypt.core.Constants;
 
 /**
  * A Code object contains java code source files. This files can be compiled during runtime with the method compile() and afterwards be executed by using the method run(...)
@@ -23,19 +28,42 @@ import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 @SuppressWarnings("restriction")
 public class CodeHandler {
 
-	private List<File> javaCodeFiles;
+	private List<GeneratorClass> javaClasses;
 	private List<File> classFiles;
 	private boolean isCodeCompiled = false;
 
 	/**
 	 * constructor
 	 * 
-	 * @param codeFileList
+	 * @param generatedClasses
 	 *        Array of file objects that include java code
 	 */
-	public CodeHandler(List<File> codeFileList) {
-		this.javaCodeFiles = codeFileList;
+	public CodeHandler(List<GeneratorClass> generatedClasses) {
+		this.javaClasses = generatedClasses;
 		classFiles = new ArrayList<File>();
+	}
+
+	/**
+	 * Writes the stored source code to the disk.
+	 * 
+	 * @throws Exception
+	 */
+	public File writeToDisk(final String folderPath) throws Exception {
+		File fileOnDisk = new File(folderPath);
+		fileOnDisk.mkdirs();
+		for (GeneratorClass toBeGeneratedClass : javaClasses) {
+			String path = fileOnDisk.getAbsolutePath() + Constants.outerFileSeparator + toBeGeneratedClass
+				.getClassName() + ".java";
+			try (
+				FileOutputStream fileOutputStream = new FileOutputStream(path)) {
+				fileOutputStream.write(toBeGeneratedClass.toString().getBytes("UTF-8"));
+			} catch (Exception e) {
+				throw new Exception("Writing source code to file failed.");
+			}
+			toBeGeneratedClass.setSourceFile(new File(path));
+		}
+		
+		return fileOnDisk;
 	}
 
 	/**
@@ -50,17 +78,16 @@ public class CodeHandler {
 		// setup compiler
 		JavaCompiler compiler = new EclipseCompiler();
 		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+		List<File> javaCodeFiles = javaClasses.stream().map(c -> c.getAssociatedJavaFile()).collect(Collectors.toList());
 		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(javaCodeFiles);
 
 		// start compilation process
 		boolean state = compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
 
-		if (state) { // if the compilation process was successful return list of
-					// class files
-			for (int i = 0; i < javaCodeFiles.size(); i++) {
+		if (state) { // if the compilation process was successful return list of class files
+			for (int i = 0; i < javaClasses.size(); i++) {
 				String path = javaCodeFiles.get(i).getAbsolutePath();
 				path = path.substring(0, path.lastIndexOf(".")) + ".class";
-
 				classFiles.add(i, new File(path));
 			}
 
@@ -97,7 +124,7 @@ public class CodeHandler {
 			try { // compile source code
 				this.compile();
 			} catch (Exception exception) {
-				System.out.println(exception.getClass().getSimpleName() + " was thrown: " + exception.getMessage());
+				Activator.getDefault().logError(exception);
 				return false;
 			}
 		}
@@ -113,7 +140,7 @@ public class CodeHandler {
 			try {
 				urls[i] = new File(path).toURI().toURL();
 			} catch (MalformedURLException exception) {
-				System.out.println(exception.getClass().getSimpleName() + " was thrown: " + exception.getMessage());
+				Activator.getDefault().logError(exception);
 				return false;
 			}
 		}
@@ -127,7 +154,7 @@ public class CodeHandler {
 			loadedClass = urlClassLoader.loadClass(clazz);
 			urlClassLoader.close();
 		} catch (ClassNotFoundException | IOException exception) {
-			System.out.println(exception.getClass().getSimpleName() + " was thrown: " + exception.getMessage());
+			Activator.getDefault().logError(exception);
 			return false;
 		}
 
@@ -135,8 +162,7 @@ public class CodeHandler {
 		try {
 			loadedClass.getMethod(method, parameterTypes).invoke(loadedClass.newInstance(), args);
 		} catch (Exception e) {
-			System.err.println("Exception is occured during method execution.");
-			System.err.println(e.getCause());
+			Activator.getDefault().logError(e, "Exception is occured during method execution.");
 			return false;
 		}
 
