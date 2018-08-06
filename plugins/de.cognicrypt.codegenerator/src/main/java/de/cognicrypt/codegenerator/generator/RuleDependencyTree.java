@@ -105,6 +105,9 @@ public class RuleDependencyTree {
 					return true;
 				}
 			}
+			if (rights.isEmpty()) {
+				break;
+			}
 			toBeVisited = rights;
 			visited.addAll(rights);
 		}
@@ -112,13 +115,12 @@ public class RuleDependencyTree {
 		return false;
 	}
 
-	public List<Entry<Entry<CryptSLRule, CryptSLRule>, String>> getOutgoingEdges(String node) {
-		return edges.stream().filter(new Predicate<Entry<Entry<CryptSLRule, CryptSLRule>, String>>() {
-
-			@Override
-			public boolean test(Entry<Entry<CryptSLRule, CryptSLRule>, String> entry) {
-				return entry.getKey().getKey().equals(node);
-			}
-		}).collect(Collectors.toList());
+	
+	public boolean hasDirectPath(CryptSLRule start, CryptSLRule goal) {
+		return getOutgoingEdges(start).stream().anyMatch(entry -> entry.getKey().getValue().equals(goal));
+	}
+	
+	public List<Entry<Entry<CryptSLRule, CryptSLRule>, String>> getOutgoingEdges(CryptSLRule node) {
+		return edges.stream().filter(entry -> entry.getKey().getKey().equals(node)).collect(Collectors.toList());
 	}
 }

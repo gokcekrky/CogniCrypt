@@ -38,6 +38,7 @@ public class GeneratorMethod {
 
 	public void addStatementToBody(String statement) {
 		body.append(statement);
+		body.append("\n");
 	}
 	
 	public String getModifier() {
