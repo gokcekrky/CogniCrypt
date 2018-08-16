@@ -52,7 +52,7 @@ import de.cognicrypt.utils.Utils;
  */
 public class CrySLBasedCodeGenerator extends CodeGenerator {
 
-	private List<CryptSLRule> rules = new ArrayList<CryptSLRule>();
+	private List<List<CryptSLRule>> rules;
 	/**
 	 * Hash table to store the values that are assigend to variables.
 	 */
@@ -117,15 +117,20 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 
 		RuleDependencyTree rdt = new RuleDependencyTree(Utils.readCrySLRules());
 		Map<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> predicateConnections = new HashMap<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>>();
-		for (int i = 0; i < rules.size(); i++) {
+		List<CryptSLRule> mashedRuleList = rules.stream().reduce((a, b) -> {
+			List<CryptSLRule> c = new ArrayList<CryptSLRule>(a);
+			c.addAll(b);
+			return c;
+		}).get();
+		for (int i = 0; i < mashedRuleList.size(); i++) {
 			// Determine possible valid parameter values be analysing
 			// the given constraints
 			// ################################################################
-			analyseConstraints(rules.get(i).getConstraints());
+			analyseConstraints(mashedRuleList.get(i).getConstraints());
 
-			if (i < rules.size() - 1) {
-				CryptSLRule nextRule = rules.get(i + 1);
-				CryptSLRule curRule = rules.get(i);
+			if (i < mashedRuleList.size() - 1) {
+				CryptSLRule nextRule = mashedRuleList.get(i + 1);
+				CryptSLRule curRule = mashedRuleList.get(i);
 
 				if (rdt.hasDirectPath(curRule, nextRule)) {
 					for (CryptSLPredicate ensPred : curRule.getPredicates()) {
@@ -150,137 +155,110 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				}
 			}
 		}
-
-		for (CryptSLRule rule : rules) {
-			String usedClass = rule.getClassName();
-
+		for (List<CryptSLRule> ruleList : rules) {
+			String usedClass = ruleList.get(ruleList.size() - 1).getClassName();
 			String simpleClassName = usedClass.substring(usedClass.lastIndexOf('.') + 1);
 			String newClass = "CogniCrypt" + simpleClassName;
-			// get state machine of cryptsl rule
-			StateMachineGraph stateMachine = rule.getUsagePattern();
+			// Create code object that includes the generated java code
+			GeneratorClass ruleClass = new GeneratorClass();
+			ruleClass.setClassName(newClass);
 
-			// analyse state machine
-			StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
-			ArrayList<List<TransitionEdge>> transitionsList;
-			Iterator<List<TransitionEdge>> transitions = null;
-			try {
-				transitionsList = stateMachineGraphAnalyser.getTransitions();
-				transitionsList.sort(new Comparator<List<TransitionEdge>>() {
+			// generate Java code
+			// ################################################################
 
-					@Override
-					public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
-						return Integer.compare(element1.size(), element2.size());
-					}
-				});
-				transitions = transitionsList.iterator();
-			} catch (Exception e) {
-				Activator.getDefault().logError(e);
-			}
+			ruleClass.setPackageName(Constants.PackageName);
 
-			do {
+			// class definition
+			ruleClass.setModifier("public");
 
-				// Load one possible path through the state machine.
-				List<TransitionEdge> currentTransitions = transitions.next();
-				ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
+			// method definition
+			// ################################################################
 
-				// Determine imports, method calls and thrown exceptions
-				ArrayList<String> imports = new ArrayList<String>(determineImports(currentTransitions));
-				for (String imp : Constants.xmlimportsarr) {
-					imports.add(imp);
-				}
-				Map<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> usablePreds = new HashMap<>();
-				for (Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> entry : predicateConnections.entrySet()) {
-					if (entry.getValue().getValue().getClassName().equals(usedClass)) {
-						usablePreds.put(entry.getKey(), entry.getValue());
-					}
-				}
+			GeneratorMethod useMethod = new GeneratorMethod();
+			useMethod.setName("use" + newClass);
+			useMethod.setModifier("public");
+			tmpUsagePars.put(useMethod.getName(), new ArrayList<String>());
 
-				Optional<Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>>> toBeEnsured = predicateConnections.entrySet().stream()
-					.filter(e -> rule.getPredicates().contains(e.getKey())).findFirst();
-				ArrayList<String> methodInvocations = generateMethodInvocations(simpleClassName, currentTransitions, methodParametersOfSuperMethod, usablePreds,
-					toBeEnsured.isPresent() ? toBeEnsured.get() : null, imports);
-				if (methodInvocations.isEmpty()) {
-					continue;
-				}
-				// Create code object that includes the generated java code
-				GeneratorClass ruleClass = new GeneratorClass();
-				ruleClass.setClassName(newClass);
+			for (CryptSLRule rule : ruleList) {
 
-				// generate Java code
-				// ################################################################
+				boolean lastRule = ruleList.get(ruleList.size() - 1).equals(rule);
+				// get state machine of cryptsl rule
+				StateMachineGraph stateMachine = rule.getUsagePattern();
 
-				ruleClass.setPackageName(Constants.PackageName);
+				// analyse state machine
+				StateMachineGraphAnalyser stateMachineGraphAnalyser = new StateMachineGraphAnalyser(stateMachine);
+				ArrayList<List<TransitionEdge>> transitionsList;
+				Iterator<List<TransitionEdge>> transitions = null;
+				try {
+					transitionsList = stateMachineGraphAnalyser.getTransitions();
+					transitionsList.sort(new Comparator<List<TransitionEdge>>() {
 
-				// first add imports
-				for (String ip : imports) {
-					ruleClass.addImport(ip);
+						@Override
+						public int compare(List<TransitionEdge> element1, List<TransitionEdge> element2) {
+							return Integer.compare(element1.size(), element2.size());
+						}
+					});
+					transitions = transitionsList.iterator();
+				} catch (Exception e) {
+					Activator.getDefault().logError(e);
 				}
 
-				// class definition
-				ruleClass.setModifier("public");
-
-				// method definition
-				// ################################################################
-
-				GeneratorMethod useMethod = new GeneratorMethod();
-				useMethod.setName("use" + newClass);
-				String returnType = getReturnType(currentTransitions, usedClass);
-				useMethod.setReturnType(returnType);
-				useMethod.setModifier("public");
-
-				Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
-				tmpUsagePars.put(useMethod.getName(), new ArrayList<String>());
 				do {
-					if (iMethodParameters.hasNext()) {
-						Entry<String, String> parameter = iMethodParameters.next();
-						useMethod.addParameter(parameter);
-						tmpUsagePars.get(useMethod.getName()).add(parameter.getValue() + " " + parameter.getKey());
+					// Load one possible path through the state machine.
+					List<TransitionEdge> currentTransitions = transitions.next();
+					ArrayList<Entry<String, String>> methodParametersOfSuperMethod = new ArrayList<Entry<String, String>>();
+
+					String returnType = getReturnType(currentTransitions, usedClass);
+					useMethod.setReturnType(returnType);
+
+					// Determine imports, method calls and thrown exceptions
+					ArrayList<String> imports = new ArrayList<String>(determineImports(currentTransitions));
+					imports.addAll(Arrays.asList(Constants.xmlimportsarr));
+					ruleClass.addImports(imports);
+
+					Map<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> usablePreds = new HashMap<>();
+					for (Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> entry : predicateConnections.entrySet()) {
+						if (entry.getValue().getValue().getClassName().equals(usedClass)) {
+							usablePreds.put(entry.getKey(), entry.getValue());
+						}
 					}
 
-				} while (iMethodParameters.hasNext());
+					Optional<Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>>> toBeEnsured = predicateConnections.entrySet().stream()
+						.filter(e -> rule.getPredicates().contains(e.getKey())).findFirst();
+					ArrayList<String> methodInvocations = generateMethodInvocations(rule.getClassName().substring(rule.getClassName().lastIndexOf('.') + 1), currentTransitions,
+						methodParametersOfSuperMethod, usablePreds, toBeEnsured.isPresent() ? toBeEnsured.get() : null, imports, lastRule);
+					if (methodInvocations.isEmpty()) {
+						continue;
+					}
 
-				// add thrown exceptions
-				for (String exc : exceptions) {
-					useMethod.addException(exc);
-				}
+					useMethod.addStatementToBody("System.out.println(\"Method is running :-)\");");
+					for (String methodInvocation : methodInvocations) {
+						useMethod.addStatementToBody(methodInvocation);
+					}
 
-				// add method body
+					// add thrown exceptions
+					useMethod.addExceptions(exceptions);
+					
+					Iterator<Entry<String, String>> iMethodParameters = methodParametersOfSuperMethod.iterator();
+					do {
+						if (iMethodParameters.hasNext()) {
+							Entry<String, String> parameter = iMethodParameters.next();
+							useMethod.addParameter(parameter);
+							tmpUsagePars.get(useMethod.getName()).add(parameter.getValue() + " " + parameter.getKey());
+						}
 
-				// first method code line for test reasons
-				useMethod.addStatementToBody("System.out.println(\"Method is running :-)\");");
+					} while (iMethodParameters.hasNext());
 
-				for (String methodInvocation : methodInvocations) {
-					useMethod.addStatementToBody(methodInvocation);
-				}
+					reliablePreds.put(rule.getClassName(), rule.getPredicates());
+					next = false;
 
-				// compile code
-				// ################################################################
-				ruleClass.addMethod(useMethod);
-				generatedClasses.add(ruleClass);
-
-				reliablePreds.put(rule.getClassName(), rule.getPredicates());
-				next = false;
-
-			} while (next);
-
+				} while (next);
+			}
+			ruleClass.addMethod(useMethod);
+			generatedClasses.add(ruleClass);
 		}
 
 		List<String> allParameters = tmpUsagePars.values().stream().flatMap(List::stream).map(String::new).collect(Collectors.toList());
-//		for (int i = 0; i < allParameters.size(); i++) {
-//			String par = allParameters.get(i);
-//			String[] parPair = par.split(" ");
-//			String parType = parPair[0];
-//			String parName = parPair[1];
-//			
-//			for (String returnType : generatedClasses.stream().map(e -> e.getUseMethod().getReturnType()).collect(Collectors.toList())) {
-//				
-//				if (methToReturnValue.entrySet().stream().anyMatch(
-//					e -> e.getKey().equals(methodName) && (isSubType(parType, e.getValue().getJavaType()) || isSubType(e.getValue().getJavaType(), parType))) && (isSubType(nextPar.getValue(), parType) || isSubType(parType,
-//						nextPar.getValue())) && (isSubType(parType, returnType) || isSubType(returnType, parType)) && nextPar.getKey().equals(parName)) {
-//					
-//				}
-//			}
-//		}
 		tmplUsage.addException("GeneralSecurityException");
 
 		List<String> matched = new ArrayList<>();
@@ -293,7 +271,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			String methodName = useMethod.getName();
 
 			if (methToReturnValue.keySet().contains(methodName) && !useMethod.getReturnType().equals("void") && j < generatedClasses.size() - 1) {
-//				boolean matched = false;
 
 				//Two rounds: 
 				//1. Match parameter type and name
@@ -308,10 +285,12 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 						String[] parPair = curParTmpUsage.split(" ");
 						String parType = parPair[0];
 						String parName = parPair[1];
-						
-						if (methToReturnValue.entrySet().stream().anyMatch(
-							e -> e.getKey().equals(methodName) && (isSubType(parType, e.getValue().getJavaType()) || isSubType(e.getValue().getJavaType(), parType))) && (isSubType(nextPar.getValue(), parType) || isSubType(parType,
-								nextPar.getValue())) && (isSubType(parType, returnType) || isSubType(returnType, parType)) && nextPar.getKey().equals(parName)) {
+
+						if (methToReturnValue.entrySet().stream()
+							.anyMatch(e -> e.getKey().equals(
+								methodName) && (isSubType(parType, e.getValue().getJavaType()) || isSubType(e.getValue().getJavaType(), parType))) && (isSubType(nextPar.getValue(),
+									parType) || isSubType(parType, nextPar.getValue())) && (isSubType(parType, returnType) || isSubType(returnType, parType)) && nextPar.getKey()
+										.equals(parName)) {
 							tmplUsage.addStatementToBody(curParTmpUsage + " = ");
 							matched.add(curParTmpUsage);
 							break;
@@ -336,9 +315,9 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 						}
 					}
 				}
-				
+
 			}
-			
+
 			String useMethodReturnType = generatedClass.getMethods().get(0).getReturnType();
 			if (j == generatedClasses.size() - 1 && !useMethodReturnType.equals("void")) {
 				tmplUsage.addStatementToBody("return ");
@@ -352,12 +331,12 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			}
 			tmplUsage.addStatementToBody(");\n");
 
-		}
-		allParameters.removeAll(matched);
-		for (String par : allParameters) {
-			tmplUsage.addParameter(new SimpleEntry<String, String>(par.split(" ")[1], par.split(" ")[0]));
-		}
+			allParameters.removeAll(matched);
+			for (String par : allParameters) {
+				tmplUsage.addParameter(new SimpleEntry<String, String>(par.split(" ")[1], par.split(" ")[0]));
+			}
 
+		}
 		generatedClasses.add(templateClass);
 		CodeHandler codeHandler = new CodeHandler(generatedClasses);
 		final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
@@ -371,16 +350,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		}
 
 		return generatedClasses != null;
-	}
-
-	private boolean isSubType(String cmp1, String cmp2) {
-		boolean t = cmp1.equals(cmp2);
-		if (!t) {
-			try {
-				t = Class.forName(cmp1).isAssignableFrom(Class.forName(cmp2));
-			} catch (ClassNotFoundException e) {}
-		}
-		return t;
 	}
 
 	private int getParameterNumber(CryptSLRule curRule, CryptSLObject par) {
@@ -399,6 +368,16 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		return 0;
 	}
 
+	private boolean isSubType(String cmp1, String cmp2) {
+		boolean subTypes = cmp1.equals(cmp2);
+		if (!subTypes) {
+			try {
+				subTypes = Class.forName(cmp1).isAssignableFrom(Class.forName(cmp2));
+			} catch (ClassNotFoundException e) {}
+		}
+		return subTypes;
+	}
+
 	/**
 	 * This method generates a method invocation for every transition of a state machine that represents a cryptsl rule.
 	 * 
@@ -408,7 +387,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 	 * @param predicateConnections
 	 * @param imports
 	 */
-	private ArrayList<String> generateMethodInvocations(String className, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, Map<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> usablePreds, Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> toBeEnsuredPred, List<String> imports) {
+	private ArrayList<String> generateMethodInvocations(String className, List<TransitionEdge> currentTransitions, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, Map<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> usablePreds, Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> toBeEnsuredPred, List<String> imports, boolean lastRule) {
 		ArrayList<String> methodInvocations = new ArrayList<String>();
 		boolean ensures = false;
 		for (TransitionEdge transition : currentTransitions) {
@@ -430,10 +409,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				for (Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> usablePred : usablePreds.entrySet()) {
 					if (method == null) {
 						method = fetchCorrespondingMethod(usablePred, meth);
-						//						if (method != null) {
-						//							String classSimpleName = usablePred.getValue().getKey().getClassName().substring(className.lastIndexOf('.') + 1);
-						//							methToReturnValue.put("useCogniCrypt" + classSimpleName, (CryptSLObject) usablePred.getKey().getParameters().get(0));
-						//						}
 					} else {
 						break;
 					}
@@ -480,7 +455,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			// see also method getSubClass(className);
 			String lastInvokedMethod = getLastInvokedMethodName(currentTransitions).toString();
 			String methodInvocation = generateMethodInvocation(lastInvokedMethod, methodParametersOfSuperMethod, imports, method, methodName, parameters, className,
-				sourceLineGenerator);
+				sourceLineGenerator, lastRule);
 
 			// Add new generated method invocation
 			if (!methodInvocation.equals("")) {
@@ -528,16 +503,6 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		}
 		return null;
 	}
-
-	/*
-	 * String predVarType = objectOfPred.getJavaType(); String predVarName = objectOfPred.getVarName(); Entry<CryptSLPredicate, Entry<CryptSLRule, CryptSLRule>> matchingEnsuredPred
-	 * = null;// predicateConnections.entrySet().stream() //.filter(e -> e.getKey().getPredName().equals(usablePred.getPredName())).findFirst().get(); String className =
-	 * matchingEnsuredPred.getValue().getKey().getClassName(); String methName = meth.getMethodName(); String classSimpleName = className.substring(className.lastIndexOf('.') + 1);
-	 * if ((predVarName.equals("this") && methName.substring(methName.lastIndexOf('.') + 1).equals(classSimpleName)) || isSubType(meth.getRetObject().getValue(), predVarType)) {
-	 * methToReturnValue.put("useCogniCrypt" + classSimpleName, predVarType); method = meth; hasFound = true; } else { for (Entry<String, String> o : meth.getParameters()) { if
-	 * (isSubType(predVarType, o.getValue()) && predVarName.equals(o.getKey())) { methToReturnValue.put("useCogniCrypt" + classSimpleName, predVarType); method = meth; hasFound =
-	 * true; break; } } } }
-	 */
 
 	private Class<?>[] collectParameterTypes(List<Entry<String, String>> parameters) {
 		Class<?>[] methodParameter = new Class<?>[parameters.size()];
@@ -590,7 +555,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 		return methodParameter;
 	}
 
-	private String generateMethodInvocation(String lastInvokedMethod, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<String> imports, CryptSLMethod method, String methodName, List<Entry<String, String>> parameters, String className, StringBuilder currentInvokedMethod) {
+	private String generateMethodInvocation(String lastInvokedMethod, ArrayList<Entry<String, String>> methodParametersOfSuperMethod, List<String> imports, CryptSLMethod method, String methodName, List<Entry<String, String>> parameters, String className, StringBuilder currentInvokedMethod, boolean lastRule) {
 		// Generate method invocation. Hereafter, a method call is distinguished in three categories.
 		String methodInvocation = "";
 
@@ -623,30 +588,32 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 			// Does method have a return value?
 			if (method.getRetObject() != null) {
 				String returnValueType = method.getRetObject().getValue();
+				boolean generated = false;
+				String voidString = "void";
 
 				// Determine lastInvokedMethod
 				lastInvokedMethod = lastInvokedMethod.substring(lastInvokedMethod.lastIndexOf('.') + 1);
 
-				// Last invoked method and return type is not equal to "void".
-				String voidString = "void";
-				if (methodName.equals(lastInvokedMethod) && !returnValueType.equals(voidString)) {
-					methodInvocation = "return " + instanceName + "." + currentInvokedMethod;
+				if (lastRule) {
+					// Last invoked method and return type is not equal to "void".
+					if (methodName.equals(lastInvokedMethod) && !returnValueType.equals(voidString)) {
+						methodInvocation = "return " + instanceName + "." + currentInvokedMethod;
+						generated = true;
+					}
+					// Last invoked method and return type is equal to "void".
+					else if (methodName.equals(lastInvokedMethod) && returnValueType.equals(voidString)) {
+						methodInvocation = instanceName + "." + currentInvokedMethod + "\nreturn " + instanceName + ";";
+						generated = true;
+					}
+					// Not the last invoked method and return type is not equal to "void".
+					else if (!methodName.equals(lastInvokedMethod) && !returnValueType.equals(voidString)) {
+						methodInvocation = returnValueType + " = " + instanceName + "." + currentInvokedMethod;
+						generated = true;
+					}
 				}
-				// Last invoked method and return type is equal to "void".
-				else if (methodName.equals(lastInvokedMethod) && returnValueType.equals(voidString)) {
-					methodInvocation = instanceName + "." + currentInvokedMethod + "\nreturn " + instanceName + ";";
-				}
-				// Not the last invoked method and return type is not equal to "void".
-				else if (!methodName.equals(lastInvokedMethod) && !returnValueType.equals(voidString)) {
-					methodInvocation = returnValueType + " = " + instanceName + "." + currentInvokedMethod;
-				}
-				// Not the last invoked method and return type is equal to "void"
-				else if (!methodName.equals(lastInvokedMethod) && returnValueType.equals(voidString)) {
+				if (!generated) {
 					methodInvocation = instanceName + "." + currentInvokedMethod;
-				} else {
-					methodInvocation = instanceName + "." + currentInvokedMethod;
 				}
-
 			} else {
 				methodInvocation = instanceName + "." + currentInvokedMethod;
 			}
@@ -705,7 +672,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 						case g:
 						case ge:
 							try {
-								parameterValues.put(varName, String.valueOf(SecureRandom.getInstance("SHA1PRNG").nextInt(Integer.MAX_VALUE - value) + value));
+								parameterValues.put(varName, String.valueOf(SecureRandom.getInstance("SHA1PRNG").nextInt(2*value) + value));
 							} catch (NoSuchAlgorithmException e1) {}
 							break;
 						case l:
@@ -787,8 +754,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 				// If no value can be assigned add variable to the parameter list of the super method
 				// Check type name for "."
 				if (parameter.getValue().contains(".")) {
-					methodParametersOfSuperMethod
-						.add(new SimpleEntry<String, String>(parameter.getKey(), parameter.getValue()));
+					methodParametersOfSuperMethod.add(new SimpleEntry<String, String>(parameter.getKey(), parameter.getValue()));
 					imports.add(parameter.getValue());
 				} else {
 					methodParametersOfSuperMethod.add(parameter);

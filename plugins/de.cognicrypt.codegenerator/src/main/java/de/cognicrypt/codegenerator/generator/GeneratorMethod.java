@@ -1,8 +1,11 @@
 package de.cognicrypt.codegenerator.generator;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class GeneratorMethod {
 
@@ -10,16 +13,17 @@ public class GeneratorMethod {
 	private String returnType;
 	private String name;
 	private List<Entry<String,String>> parameters;
-	private List<String> exceptions;
+	private Set<String> exceptions;
 	private StringBuilder body;
 	
 
 	public GeneratorMethod() {
 		body = new StringBuilder();
 		parameters = new ArrayList<Entry<String,String>>();
-		exceptions = new ArrayList<String>();
+		exceptions = new HashSet<String>();
 	}
 	
+	@Override
 	public boolean equals(Object cmp) {
 		if (cmp instanceof GeneratorMethod) {
 			GeneratorMethod comparee = (GeneratorMethod) cmp;
@@ -28,12 +32,17 @@ public class GeneratorMethod {
 		return false;
 	}
 	
-	public int hashcode() {
+	@Override
+	public int hashCode() {
 		return 31 * name.hashCode() * returnType.hashCode() * modifier.hashCode();
 	}
 
 	public void addException(String exception) {
 		this.exceptions.add(exception);
+	}
+	
+	public void addExceptions(Collection<String> exceptions) {
+		this.exceptions.addAll(exceptions);
 	}
 
 	public void addStatementToBody(String statement) {
@@ -69,7 +78,7 @@ public class GeneratorMethod {
 		return body.toString();
 	}
 
-	public List<String> getExceptions() {
+	public Set<String> getExceptions() {
 		return exceptions;
 	}
 
@@ -96,8 +105,9 @@ public class GeneratorMethod {
 		method.append(")");
 		if (exceptions.size() > 0) {
 			method.append(" throws ");
+			List<String> exAsList = new ArrayList<String>(exceptions);
 			for (int i = 0; i < exceptions.size(); i++) {
-				method.append(exceptions.get(i));
+				method.append(exAsList.get(i));
 				if (i < exceptions.size() -1) {
 					method.append(", ");
 				}

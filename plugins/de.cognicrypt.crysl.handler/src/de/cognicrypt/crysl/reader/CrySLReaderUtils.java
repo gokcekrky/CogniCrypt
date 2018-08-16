@@ -85,6 +85,7 @@ public class CrySLReaderUtils {
 				if (par.getVal() != null && par.getVal().getName() != null) {
 					final ObjectDecl objectDecl = (ObjectDecl) par.getVal().eContainer();
 					parValue = par.getVal().getName();
+					
 					final String parType = objectDecl.getObjectType().getIdentifier()
 							+ ((objectDecl.getArray() != null) ? objectDecl.getArray() : "");
 					pars.add(new SimpleEntry<>(parValue, parType));

@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 import javax.swing.UIManager;
@@ -54,6 +55,7 @@ import de.cognicrypt.codegenerator.wizard.advanced.AdvancedUserValueSelectionPag
 import de.cognicrypt.codegenerator.wizard.beginner.BeginnerModeQuestionnaire;
 import de.cognicrypt.codegenerator.wizard.beginner.BeginnerTaskQuestionPage;
 import de.cognicrypt.core.Constants;
+import de.cognicrypt.core.Constants.CodeGenerators;
 import de.cognicrypt.core.Constants.GUIElements;
 import de.cognicrypt.utils.Utils;
 
@@ -81,7 +83,9 @@ public class ConfiguratorWizard extends Wizard {
 	private int prevPageId;
 	private List<Integer> protocolList;
 
-	public ConfiguratorWizard() {
+	private final CodeGenerators generator;
+
+	public ConfiguratorWizard(CodeGenerators codeGen) {
 		super();
 		// Set the Look and Feel of the application to the operating
 		// system's look and feel.
@@ -95,7 +99,7 @@ public class ConfiguratorWizard extends Wizard {
 		setDefaultPageImageDescriptor(image);
 
 		this.createdPages = new HashMap<>();
-
+		generator = codeGen;
 	}
 
 	@Override
@@ -304,7 +308,7 @@ public class ConfiguratorWizard extends Wizard {
 			final InstanceGenerator instanceGenerator = new InstanceGenerator(CodeGenUtils.getResourceFromWithin(selectedTask.getModelFile())
 				.getAbsolutePath(), "c0_" + selectedTask.getName(), selectedTask.getDescription());
 
-				instanceGenerator.generateInstances(this.constraints);
+			instanceGenerator.generateInstances(this.constraints);
 			//instance details page will be added after default algorithm page only if the number of instances is greater than 1
 			if (this.defaultAlgorithmPage.isDefaultAlgorithm() && instanceGenerator.getNoOfInstances() > 1) {
 				this.instanceListPage = new InstanceListPage(instanceGenerator, this.constraints, this.taskListPage, this.defaultAlgorithmPage);
@@ -372,57 +376,61 @@ public class ConfiguratorWizard extends Wizard {
 	@Override
 	public boolean performFinish() {
 		boolean ret = false;
-		InstanceClafer instance = null;
 		final String currentPageName = getContainer().getCurrentPage().getName();
-		if (Constants.ALGORITHM_SELECTION_PAGE.equals(currentPageName)) {
-			ret = this.instanceListPage.isPageComplete();
-			instance = this.instanceListPage.getValue();
-		} else if (Constants.DEFAULT_ALGORITHM_PAGE.equals(currentPageName)) {
-			ret = this.defaultAlgorithmPage.isPageComplete();
-			instance = this.defaultAlgorithmPage.getValue();
-		}
-
-		// Initialize Code Generation
 		final Task selectedTask = this.taskListPage.getSelectedTask();
-		final CodeGenerator codeGenerator = new XSLBasedGenerator(this.taskListPage.getSelectedProject(), selectedTask.getXslFile());
-		final DeveloperProject developerProject = codeGenerator.getDeveloperProject();
-
-		// Generate code template
-		ret &= codeGenerator.generateCodeTemplates(
-			new Configuration(instance, this.constraints, developerProject.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile),
-			selectedTask.getAdditionalResources());
-		Configuration chosenConfig = new Configuration(instance, this.constraints, developerProject
-			.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
+		CodeGenerator codeGenerator;
 		String additionalResources = selectedTask.getAdditionalResources();
-		//		ret &= codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
-		String rulesFolder = Utils.getResourceFromWithin("resources/CrySLRules", de.cognicrypt.core.Activator.PLUGIN_ID).getAbsolutePath();
-		try {
-			List<String> rules = Arrays.asList(new String[] {"Cipher", "KeyGenerator"});
-			rules.sort(new CrySLComparator(readCrysLRules(rulesFolder)));
-			CrySLBasedCodeGenerator codeGeneratorNew = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject(), rules);
-			codeGeneratorNew.generateCodeTemplates(chosenConfig, additionalResources);
-		} catch (Exception e) {
-			Activator.getDefault().logError(e);
+
+		switch (generator) {
+			case CrySL:
+				List<List<CryptSLRule>> rules = new ArrayList<List<CryptSLRule>>();
+				try {
+					List<List<String>> stringRules = new ArrayList<List<String>>();
+					stringRules.add(Arrays.asList(new String[] {"SecureRandom", "PBEKeySpec", "SecretKeyFactory", "SecretKey", "SecretKeySpec"}));
+					stringRules.add(Arrays.asList(new String[] {"Cipher" }));	
+					
+					for (List<String> rule : stringRules) {
+						ArrayList<CryptSLRule> newRules = new ArrayList<CryptSLRule>();
+						rules.add(newRules);
+						for (String r : rule) {
+							newRules.add(Utils.getCryptSLRule(r));
+						}
+//						newRules.sort(new CrySLComparator());
+					}
+					
+					
+					codeGenerator = new CrySLBasedCodeGenerator(this.taskListPage.getSelectedProject());
+					Configuration chosenConfig = new CrySLConfiguration(rules, this.constraints, codeGenerator.getDeveloperProject()
+						.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
+
+					ret = codeGenerator.generateCodeTemplates(chosenConfig, additionalResources);
+				} catch (Exception e) {
+					Activator.getDefault().logError(e);
+					return false;
+				}
+				break;
+			case XSL:
+				InstanceClafer instance = null;
+				if (Constants.ALGORITHM_SELECTION_PAGE.equals(currentPageName)) {
+					instance = this.instanceListPage.getValue();
+					ret = this.instanceListPage.isPageComplete();
+				} else if (Constants.DEFAULT_ALGORITHM_PAGE.equals(currentPageName)) {
+					instance = this.defaultAlgorithmPage.getValue();
+					ret = this.defaultAlgorithmPage.isPageComplete();
+
+				}
+
+				codeGenerator = new XSLBasedGenerator(this.taskListPage.getSelectedProject(), selectedTask.getXslFile());
+				Configuration chosenConfig = new XSLConfiguration(instance, this.constraints, codeGenerator.getDeveloperProject()
+					.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
+				ret &= codeGenerator.generateCodeTemplates(chosenConfig, selectedTask.getAdditionalResources());
+				break;
+			default:
+				break;
+
 		}
+
 		return ret;
-	}
-
-	private List<CryptSLRule> readCrysLRules(String rulesFolder) {
-		List<CryptSLRule> rules = new ArrayList<CryptSLRule>();
-
-		for (File rule : (new File(rulesFolder)).listFiles()) {
-			FileInputStream fileIn;
-			try {
-				fileIn = new FileInputStream(rule);
-				final ObjectInputStream in = new ObjectInputStream(fileIn);
-				rules.add((CryptSLRule) in.readObject());
-				in.close();
-				fileIn.close();
-			} catch (IOException | ClassNotFoundException e) {
-				Activator.getDefault().logError(e);
-			}
-		}
-		return rules;
 	}
 
 	public HashMap<Question, Answer> getConstraints() {

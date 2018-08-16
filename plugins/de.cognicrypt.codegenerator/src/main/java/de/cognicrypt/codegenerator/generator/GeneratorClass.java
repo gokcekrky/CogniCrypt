@@ -2,20 +2,22 @@ package de.cognicrypt.codegenerator.generator;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class GeneratorClass {
 
 	private String packageName;
-	private List<String> imports;
+	private Set<String> imports;
 	private String modifier;
 	private String className;
 	private List<GeneratorMethod> methods;
 	private File associatedFile;
 
 	public GeneratorClass() {
-		imports = new ArrayList<String>();
+		imports = new HashSet<String>();
 		methods = new ArrayList<GeneratorMethod>();
 	}
 	
@@ -42,6 +44,10 @@ public class GeneratorClass {
 		imports.add(imp);
 	}
 	
+	public void addImports(List<String> imports) {
+		this.imports.addAll(imports);
+	}
+	
 	public String getPackageName() {
 		return packageName;
 	}
@@ -66,7 +72,7 @@ public class GeneratorClass {
 		this.className = className;
 	}
 
-	public List<String> getImports() {
+	public Set<String> getImports() {
 		return imports;
 	}
 

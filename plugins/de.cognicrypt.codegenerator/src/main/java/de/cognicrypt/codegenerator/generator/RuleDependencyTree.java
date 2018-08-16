@@ -14,6 +14,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.Set;
 
+import crypto.rules.CryptSLObject;
 import crypto.rules.CryptSLPredicate;
 import crypto.rules.CryptSLRule;
 
@@ -115,11 +116,11 @@ public class RuleDependencyTree {
 		return false;
 	}
 
-	
 	public boolean hasDirectPath(CryptSLRule start, CryptSLRule goal) {
-		return getOutgoingEdges(start).stream().anyMatch(entry -> entry.getKey().getValue().equals(goal));
+		return getOutgoingEdges(start).stream().anyMatch(entry -> entry.getKey().getValue().equals(goal)); // || start.getPredicates().stream()
+			//.anyMatch(predicate -> ((CryptSLObject) predicate.getParameters().get(0)).getJavaType().equals(goal.getRequiredPredicates().get(0)));
 	}
-	
+
 	public List<Entry<Entry<CryptSLRule, CryptSLRule>, String>> getOutgoingEdges(CryptSLRule node) {
 		return edges.stream().filter(entry -> entry.getKey().getKey().equals(node)).collect(Collectors.toList());
 	}
