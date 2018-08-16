@@ -8,13 +8,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-
-import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 
 import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.core.Constants;
@@ -25,7 +18,6 @@ import de.cognicrypt.core.Constants;
  * @author Florian Breitfelder
  * @author Stefan Krueger
  */
-@SuppressWarnings("restriction")
 public class CodeHandler {
 
 	private List<GeneratorClass> javaClasses;
@@ -76,28 +68,28 @@ public class CodeHandler {
 	 */
 	public List<File> compile() throws CompilationFailedException, RuntimeException, IllegalStateException {
 		// setup compiler
-		JavaCompiler compiler = new EclipseCompiler();
-		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-		List<File> javaCodeFiles = javaClasses.stream().map(c -> c.getAssociatedJavaFile()).collect(Collectors.toList());
-		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(javaCodeFiles);
-
-		// start compilation process
-		boolean state = compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
-
-		if (state) { // if the compilation process was successful return list of class files
-			for (int i = 0; i < javaClasses.size(); i++) {
-				String path = javaCodeFiles.get(i).getAbsolutePath();
-				path = path.substring(0, path.lastIndexOf(".")) + ".class";
-				classFiles.add(i, new File(path));
-			}
-
-			isCodeCompiled = true;
+//		JavaCompiler compiler = new EclipseCompiler();
+//		StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+//		List<File> javaCodeFiles = javaClasses.stream().map(c -> c.getAssociatedJavaFile()).collect(Collectors.toList());
+//		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(javaCodeFiles);
+//
+//		// start compilation process
+//		boolean state = compiler.getTask(null, fileManager, null, null, null, compilationUnits).call();
+//
+//		if (state) { // if the compilation process was successful return list of class files
+//			for (int i = 0; i < javaClasses.size(); i++) {
+//				String path = javaCodeFiles.get(i).getAbsolutePath();
+//				path = path.substring(0, path.lastIndexOf(".")) + ".class";
+//				classFiles.add(i, new File(path));
+//			}
+//
+//			isCodeCompiled = true;
 			return classFiles;
-
-		} else { // if the compilation failed throw exception
-			isCodeCompiled = false;
-			throw new CompilationFailedException("Compilation failed!");
-		}
+//
+//		} else { // if the compilation failed throw exception
+//			isCodeCompiled = false;
+//			throw new CompilationFailedException("Compilation failed!");
+//		}
 	}
 
 	/**
