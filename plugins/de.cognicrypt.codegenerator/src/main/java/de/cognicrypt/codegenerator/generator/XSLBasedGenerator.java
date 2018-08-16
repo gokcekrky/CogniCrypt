@@ -54,6 +54,7 @@ public class XSLBasedGenerator extends CodeGenerator {
 	 * @param pathToXSLFile
 	 *        Path to the XSL file is read from the Tasks.json file instead of a constant.
 	 */
+
 	public XSLBasedGenerator(final IProject targetProject, final String pathToXSLFile) {
 		super(targetProject);
 		xslFile = CodeGenUtils.getResourceFromWithin(pathToXSLFile);
@@ -67,7 +68,8 @@ public class XSLBasedGenerator extends CodeGenerator {
 				Activator.getDefault().logError(Constants.FilesDoNotExistErrorMessage);
 				return false;
 			}
-
+			
+			
 			final String srcPath = this.project.getProjectPath() + Constants.innerFileSeparator + this.project.getSourcePath();
 			String temporaryOutputFile = srcPath + Constants.CodeGenerationCallFile;
 
@@ -134,7 +136,7 @@ public class XSLBasedGenerator extends CodeGenerator {
 		}
 		return true;
 	}
-
+	
 	/**
 	 * Performs the XSL-Transformation.
 	 *
