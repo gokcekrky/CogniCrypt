@@ -34,6 +34,7 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
 import de.cognicrypt.codegenerator.question.Question;
 import de.cognicrypt.codegenerator.utilities.XMLParser;
+import de.cognicrypt.core.Constants;
 import de.cognicrypt.utils.FileHelper;
 
 @RunWith(value = Parameterized.class)
@@ -80,7 +81,7 @@ public class XMLParserTest {
 
 	@Test
 	public void testWriteToFile() throws IOException, DocumentException {
-		final byte[] validBytes = new byte[2000];
+		byte[] validBytes = new byte[2000];
 		final byte[] generatedBytes = new byte[2000];
 
 		final FileInputStream validFile = new FileInputStream(this.validFilePath);
@@ -95,7 +96,9 @@ public class XMLParserTest {
 		testFile.read(generatedBytes);
 		testFile.close();
 
-		assertEquals(new String(validBytes), new String(generatedBytes));
+		String validXML = collectImports(new String(validBytes, "UTF-8"));
+		String generatedXML = new String(generatedBytes, "UTF-8");
+		assertEquals(validXML, generatedXML);
 	}
 
 	@Test
@@ -103,25 +106,31 @@ public class XMLParserTest {
 		final String encoding = "UTF-8";
 		byte[] encoded = Files.readAllBytes(Paths.get(this.validFilePath));
 		String validXML = new String(encoded, encoding);
-		//		StringBuilder importBuilder = new StringBuilder();
-		//		for (String importSt : Constants.xmlimportsarr) {
-		//			importBuilder.append("<Import>");
-		//			importBuilder.append(importSt);
-		//			importBuilder.append("</Import>");
-		//		}
-
-		//		final String validXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<task description=\"PasswordStoring\"><Package>Crypto</Package><Imports>" + importBuilder
-		//			.toString() + "</Imports><algorithm type=\"Digest\"><outputSize>384</outputSize><name>SHA-384</name><performance>3</performance><status>secure</status></algorithm><algorithm type=\"KeyDerivationAlgorithm\"><name>PBKDF</name><performance>2</performance><status>secure</status></algorithm><name>Password Storing</name><code/></task>";
+		validXML = collectImports(validXML);
+		
 		final XMLParser xmlparser = new XMLParser();
 
 		final String xml = xmlparser.displayInstanceValues(this.inst, this.constraints).asXML();
 		assertEquals(uglifyXML(validXML), uglifyXML(xml));
 	}
 
+	private String collectImports(String validXML) {
+		StringBuilder importBuilder = new StringBuilder();
+		importBuilder.append("<Imports>\n");
+		for (String importSt : Constants.xmlimportsarr) {
+			importBuilder.append("    <Import>");
+			importBuilder.append(importSt);
+			importBuilder.append("</Import>\n");
+		}
+		importBuilder.append("  </Imports>");
+		validXML = validXML.replace("<XMLImports/>", importBuilder.toString());
+		return validXML;
+	}
+
 	/**
 	 * move all tags together and remove newlines
 	 */
 	public String uglifyXML(String input) {
-		return input.replaceAll(">\\s*<", "><").replace("\n", "");
+		return input.replaceAll("\\s+", "").replace("\n", "");
 	}
 }
