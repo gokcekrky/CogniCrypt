@@ -98,7 +98,7 @@ public class XMLParserTest {
 
 		String validXML = collectImports(new String(validBytes, "UTF-8"));
 		String generatedXML = new String(generatedBytes, "UTF-8");
-		assertEquals(validXML, generatedXML);
+		assertEquals(validXML.trim(), generatedXML.trim());
 	}
 
 	@Test
