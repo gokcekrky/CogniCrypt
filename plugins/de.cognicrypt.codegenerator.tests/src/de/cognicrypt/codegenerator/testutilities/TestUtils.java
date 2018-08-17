@@ -41,6 +41,7 @@ import de.cognicrypt.codegenerator.question.QuestionsJSONReader;
 import de.cognicrypt.codegenerator.tasks.Task;
 import de.cognicrypt.codegenerator.tasks.TaskJSONReader;
 import de.cognicrypt.codegenerator.wizard.Configuration;
+import de.cognicrypt.codegenerator.wizard.XSLConfiguration;
 import de.cognicrypt.core.Activator;
 import de.cognicrypt.core.Constants;
 import de.cognicrypt.utils.Utils;
@@ -188,7 +189,7 @@ public class TestUtils {
 		HashMap<Question, Answer> constraints = TestUtils.setDefaultConstraintsForTask(t);
 		List<InstanceClafer> instList = instGen.generateInstances(constraints);
 		InstanceClafer inst = instList.get(0);
-		Configuration ret = new Configuration(inst, constraints,
+		Configuration ret = new XSLConfiguration(inst, constraints,
 				developerProject.getProjectPath() + Constants.innerFileSeparator + Constants.pathToClaferInstanceFile);
 		return ret;
 	}
