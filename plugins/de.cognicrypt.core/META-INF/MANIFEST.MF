@@ -14,17 +14,29 @@ Require-Bundle: org.eclipse.core.runtime,
  com.google.guava
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
-Export-Package: crypto,
+Export-Package: boomerang.jimple,
+ boomerang.results,
+ crypto,
+ crypto.analysis,
+ crypto.analysis.errors,
+ crypto.extractparameter,
  crypto.interfaces,
  crypto.rules,
+ crypto.typestate,
  de.cognicrypt.core;uses:="org.osgi.framework,org.eclipse.core.runtime",
  de.cognicrypt.utils;
   uses:="org.eclipse.ui,
    org.eclipse.jdt.core,
    org.eclipse.core.resources,
    org.eclipse.jdt.core.search",
- soot
+ soot,
+ soot.jimple,
+ soot.jimple.toolkits.ide.icfg,
+ soot.options,
+ soot.tagkit,
+ sync.pds.solver.nodes,
+ typestate
 Automatic-Module-Name: de.cognicrypt.core
-Bundle-ClassPath: lib/cognicrypt-maven-plugin-1.0-SNAPSHOT.jar,
- .,
+Bundle-ClassPath: .,
  resources/CrySLRules/
+ lib/CryptoAnalysis-1.0.0-jar-with-dependencies.jar
