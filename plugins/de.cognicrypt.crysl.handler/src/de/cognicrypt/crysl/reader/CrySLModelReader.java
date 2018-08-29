@@ -171,6 +171,7 @@ public class CrySLModelReader {
 			}
 			final CryptSLRule rule = new CryptSLRule(curClass, objects, this.forbiddenMethods, this.smg, constraints,
 					actPreds);
+			System.out.println(rule);
 			System.out.println("===========================================");
 			System.out.println("");
 
@@ -429,8 +430,10 @@ public class CrySLModelReader {
 			}
 			final List<CryptSLMethod> crysl = new ArrayList<>();
 
-			crysl.addAll(CrySLReaderUtils.resolveAggregateToMethodeNames(fm.getRep()));
-
+			Event alternative = fm.getRep();
+			if (alternative != null) {
+				crysl.addAll(CrySLReaderUtils.resolveAggregateToMethodeNames(alternative));
+			}
 			methodSignatures.add(new CryptSLForbiddenMethod(
 					new CryptSLMethod(meth.getDeclaringType().getIdentifier() + "." + meth.getSimpleName(), pars, null,
 							new SimpleEntry<>("_", "AnyType")),
