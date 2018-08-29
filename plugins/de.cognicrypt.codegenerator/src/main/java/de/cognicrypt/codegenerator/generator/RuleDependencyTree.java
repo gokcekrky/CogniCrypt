@@ -17,6 +17,7 @@ import java.util.Set;
 import crypto.rules.CryptSLObject;
 import crypto.rules.CryptSLPredicate;
 import crypto.rules.CryptSLRule;
+import de.cognicrypt.utils.Utils;
 
 public class RuleDependencyTree {
 
@@ -117,8 +118,11 @@ public class RuleDependencyTree {
 	}
 
 	public boolean hasDirectPath(CryptSLRule start, CryptSLRule goal) {
-		return getOutgoingEdges(start).stream().anyMatch(entry -> entry.getKey().getValue().equals(goal)); // || start.getPredicates().stream()
-			//.anyMatch(predicate -> ((CryptSLObject) predicate.getParameters().get(0)).getJavaType().equals(goal.getRequiredPredicates().get(0)));
+		return getOutgoingEdges(start).stream().anyMatch(entry -> entry.getKey().getValue().equals(goal)) || start.getPredicates().stream().anyMatch(predicate -> {
+			String predType = ((CryptSLObject) predicate.getParameters().get(0)).getJavaType();
+			String goalType = goal.getClassName();
+			return Utils.isSubType(predType, goalType) || Utils.isSubType(goalType, predType);
+		});
 	}
 
 	public List<Entry<Entry<CryptSLRule, CryptSLRule>, String>> getOutgoingEdges(CryptSLRule node) {

@@ -12,6 +12,7 @@ package de.cognicrypt.codegenerator.wizard;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -393,9 +394,12 @@ public class ConfiguratorWizard extends Wizard {
 						ArrayList<CryptSLRule> newRules = new ArrayList<CryptSLRule>();
 						rules.add(newRules);
 						for (String r : rule) {
-							newRules.add(Utils.getCryptSLRule(r));
+							try {
+								newRules.add(Utils.getCryptSLRule(r));
+							} catch (FileNotFoundException ex) {
+								Activator.getDefault().logError(ex, "CrySL rule" + r + " not found.");
+							}
 						}
-//						newRules.sort(new CrySLComparator());
 					}
 					
 					

@@ -12,6 +12,7 @@ package de.cognicrypt.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.URI;
@@ -342,5 +343,15 @@ public class Utils {
 			}
 		}
 		return rules;
+	}
+	
+	public static boolean isSubType(String typeOne, String typeTwo) {
+		boolean subTypes = typeOne.equals(typeTwo);
+		if (!subTypes) {
+			try {
+				subTypes = Class.forName(typeOne).isAssignableFrom(Class.forName(typeTwo));
+			} catch (ClassNotFoundException e) {}
+		}
+		return subTypes;
 	}
 }

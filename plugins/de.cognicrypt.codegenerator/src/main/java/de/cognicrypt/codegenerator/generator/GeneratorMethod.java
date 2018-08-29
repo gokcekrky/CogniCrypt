@@ -6,23 +6,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.AbstractMap.SimpleEntry;
 
 public class GeneratorMethod {
 
 	private String modifier;
 	private String returnType;
 	private String name;
-	private List<Entry<String,String>> parameters;
+	private List<Entry<String, String>> parameters;
 	private Set<String> exceptions;
 	private StringBuilder body;
-	
+	private List<Entry<String, String>> variableDeclarations;
+	private StringBuilder killStatements;
 
 	public GeneratorMethod() {
 		body = new StringBuilder();
-		parameters = new ArrayList<Entry<String,String>>();
+		variableDeclarations = new ArrayList<Entry<String, String>>();
+		parameters = new ArrayList<Entry<String, String>>();
 		exceptions = new HashSet<String>();
 	}
-	
+
 	@Override
 	public boolean equals(Object cmp) {
 		if (cmp instanceof GeneratorMethod) {
@@ -31,7 +34,7 @@ public class GeneratorMethod {
 		}
 		return false;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return 31 * name.hashCode() * returnType.hashCode() * modifier.hashCode();
@@ -40,16 +43,33 @@ public class GeneratorMethod {
 	public void addException(String exception) {
 		this.exceptions.add(exception);
 	}
-	
+
 	public void addExceptions(Collection<String> exceptions) {
 		this.exceptions.addAll(exceptions);
 	}
 
-	public void addStatementToBody(String statement) {
-		body.append(statement);
-		body.append("\n");
+	public void addKillStatement(String statement) {
+		if (killStatements == null) {
+			killStatements = new StringBuilder();
+		}
+		killStatements.append(statement);
+		killStatements.append("\n");
 	}
 	
+	public List<Entry<String, String>> getDeclaredVariables() {
+		return variableDeclarations;
+	}
+
+	public void addStatementToBody(String statement) {
+		body.append(statement);
+		int index = -1;
+		if ((index = statement.indexOf('=')) > 0) {
+			String[] varDecl = statement.substring(0, index).split(" ");
+			variableDeclarations.add(new SimpleEntry<>(varDecl[1], varDecl[0]));
+		}
+		body.append("\n");
+	}
+
 	public String getModifier() {
 		return modifier;
 	}
@@ -85,11 +105,11 @@ public class GeneratorMethod {
 	public void addParameter(Entry<String, String> parameter) {
 		parameters.add(parameter);
 	}
-	
+
 	public List<Entry<String, String>> getParameters() {
 		return parameters;
 	}
-	
+
 	public String toString() {
 		String signature = modifier + " " + returnType + " " + name + "(";
 		StringBuilder method = new StringBuilder(signature);
@@ -108,16 +128,20 @@ public class GeneratorMethod {
 			List<String> exAsList = new ArrayList<String>(exceptions);
 			for (int i = 0; i < exceptions.size(); i++) {
 				method.append(exAsList.get(i));
-				if (i < exceptions.size() -1) {
+				if (i < exceptions.size() - 1) {
 					method.append(", ");
 				}
 			}
 		}
-		
+
 		method.append("{ \n");
 		method.append(body);
 		method.append("\n}");
-		return method.toString();
+		if (killStatements != null) {
+			return method.toString().replace("return ", killStatements.toString() + "\n return ");
+		} else {
+			return method.toString();
+		}
 	}
-	
+
 }
