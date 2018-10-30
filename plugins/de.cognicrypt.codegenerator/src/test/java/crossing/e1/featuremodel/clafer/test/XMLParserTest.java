@@ -33,7 +33,7 @@ import de.cognicrypt.codegenerator.featuremodel.clafer.ClaferModel;
 import de.cognicrypt.codegenerator.featuremodel.clafer.InstanceGenerator;
 import de.cognicrypt.codegenerator.question.Answer;
 import de.cognicrypt.codegenerator.question.Question;
-import de.cognicrypt.codegenerator.utilities.XMLParser;
+import de.cognicrypt.codegenerator.utilities.XMLClaferParser;
 import de.cognicrypt.core.Constants;
 import de.cognicrypt.utils.FileHelper;
 
@@ -88,7 +88,7 @@ public class XMLParserTest {
 		validFile.read(validBytes);
 		validFile.close();
 
-		final XMLParser xmlparser = new XMLParser();
+		final XMLClaferParser xmlparser = new XMLClaferParser();
 		xmlparser.displayInstanceValues(this.inst, this.constraints);
 		xmlparser.writeXMLToFile(this.xmlTestFilePath);
 
@@ -108,7 +108,7 @@ public class XMLParserTest {
 		String validXML = new String(encoded, encoding);
 		validXML = collectImports(validXML);
 		
-		final XMLParser xmlparser = new XMLParser();
+		final XMLClaferParser xmlparser = new XMLClaferParser();
 
 		final String xml = xmlparser.displayInstanceValues(this.inst, this.constraints).asXML();
 		assertEquals(uglifyXML(validXML), uglifyXML(xml));

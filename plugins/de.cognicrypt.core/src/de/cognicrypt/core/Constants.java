@@ -26,6 +26,9 @@ public class Constants {
 	public enum CodeGenerators {
 		XSL, CrySL
 	}
+	public enum Severities {
+		Problem, Warning, Secure
+	}
 
 	public static final String NO_RES_FOUND = "No resource to generate error marker for found.";
 	public static final String OBJECT_OF_TYPE = "Object of type ";
@@ -211,7 +214,7 @@ public class Constants {
 			"javax.crypto.Cipher", "javax.crypto.IllegalBlockSizeException", "javax.crypto.NoSuchPaddingException",
 			"java.security.SecureRandom", "javax.crypto.spec.IvParameterSpec", "javax.crypto.spec.SecretKeySpec",
 			"java.security.spec.InvalidKeySpecException", "java.util.List", "java.util.Base64", "java.io.InputStream",
-			"java.io.OutputStream", "java.util.Properties", "java.io.FileOutputStream" };
+			"java.io.OutputStream", "java.util.Properties", "java.io.FileOutputStream", "java.security.Key" };
 
 	// Types
 	public static final String INTEGER = "Integer";
@@ -499,6 +502,18 @@ public class Constants {
 	public static final String textBox = "Text box";
 	public static final String radioButton = "Radio button";
 
+	// for creating SuppressWarnings.xml
+	public static final String SUPPRESSWARNING_FILE = "SuppressWarnings"+XML_EXTENSION;
+	public static final String SUPPRESSWARNINGS_ELEMENT = "SuppressWarnings";
+	public static final String SUPPRESSWARNING_ELEMENT = "SuppressWarning";
+	public static final String ID_ATTR = "ID";
+	public static final String FILE_ELEMENT = "File";
+	public static final String LINENUMBER_ELEMENT = "LineNumber";
+	public static final String MESSAGE_ELEMENT = "Message";
+	
+	// QuickFixs
+	public static final String SUPPRESSWARNING_FIX = "Suppress Warning: ";
+	
 	// for creating xml file
 	public static final String Xml_Declaration = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	public static final String NLS_Tag = "<?NLS TYPE=\"org.eclipse.help.contexts\"?>";

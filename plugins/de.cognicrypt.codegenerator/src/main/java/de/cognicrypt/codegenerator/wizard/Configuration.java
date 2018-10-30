@@ -32,10 +32,10 @@ public abstract class Configuration {
 	final protected Map<Question, Answer> options;
 	final protected String pathOnDisk;
 
-	protected Configuration(Map<Question, Answer> constraints, String pathOnDisk) {
+	public Configuration(Map<Question, Answer> constraints, String pathOnDisk) {
 		this.pathOnDisk = pathOnDisk;
 		this.options = constraints;
-	}
+}
 
 	/**
 	 * Writes chosen configuration to hard disk.
@@ -44,7 +44,9 @@ public abstract class Configuration {
 	 * @throws IOException
 	 *         see {@link FileWriter#FileWriter(String)) FileWriter} and {@link XMLWriter#write(String) XMLWriter.write()}
 	 */
+
 	public abstract File persistConf() throws IOException;
+
 
 	/**
 	 * Retrieves list of custom providers from configuration.
