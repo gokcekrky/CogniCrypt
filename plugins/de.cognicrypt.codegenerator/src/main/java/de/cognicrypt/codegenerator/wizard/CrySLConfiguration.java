@@ -14,9 +14,9 @@ public class CrySLConfiguration extends Configuration {
 
 	private final List<List<CryptSLRule>> rules;
 
-	protected CrySLConfiguration(List<List<CryptSLRule>> rules2, Map<Question, Answer> constraints, String pathOnDisk) {
+	public CrySLConfiguration(List<List<CryptSLRule>> rules, Map<Question, Answer> constraints, String pathOnDisk) {
 		super(constraints, pathOnDisk);
-		this.rules = rules2;
+		this.rules = rules;
 	}
 
 	@Override
