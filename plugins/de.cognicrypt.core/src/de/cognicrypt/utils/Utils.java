@@ -58,12 +58,12 @@ import org.osgi.framework.Bundle;
 
 import com.google.common.base.CharMatcher;
 
-import crypto.analysis.CrySLRulesetSelector.RuleFormat;
-import crypto.cryslhandler.CrySLModelReader;
-import crypto.rules.CrySLRule;
-import crypto.rules.CrySLRuleReader;
-import crypto.rules.StateNode;
-import crypto.rules.TransitionEdge;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLReaderUtils.RuleFormat;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRule;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRuleReader;
+import de.darmstadt.tu.crossing.crysl.rules.StateNode;
+import de.darmstadt.tu.crossing.crysl.rules.TransitionEdge;
 import de.cognicrypt.core.Activator;
 import de.cognicrypt.core.Constants;
 

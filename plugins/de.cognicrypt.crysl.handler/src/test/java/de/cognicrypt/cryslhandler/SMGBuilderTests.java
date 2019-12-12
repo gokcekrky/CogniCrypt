@@ -19,12 +19,13 @@ import java.util.Map.Entry;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import crypto.rules.CrySLMethod;
-import crypto.rules.CrySLRule;
-import crypto.rules.StateMachineGraph;
-import crypto.rules.StateNode;
-import crypto.rules.TransitionEdge;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLMethod;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRule;
+import de.darmstadt.tu.crossing.crysl.rules.StateMachineGraph;
+import de.darmstadt.tu.crossing.crysl.rules.StateNode;
+import de.darmstadt.tu.crossing.crysl.rules.TransitionEdge;
+import de.cognicrypt.crysl.handler.Activator;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
 
 public class SMGBuilderTests {
 
@@ -32,7 +33,7 @@ public class SMGBuilderTests {
 
 	@BeforeClass
 	public static void setUp() throws MalformedURLException {
-		csmr = new CrySLModelReader();
+		csmr = new CrySLModelReader(Activator.PLUGIN_ID);
 	}
 
 	private CrySLRule readRuleFromFuleName(String ruleName) {

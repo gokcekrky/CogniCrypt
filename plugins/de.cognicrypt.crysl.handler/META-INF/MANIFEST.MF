@@ -22,6 +22,5 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .
 Automatic-Module-Name: de.cognicrypt.crysl.handler
-Export-Package: de.cognicrypt.crysl.creator,
- de.cognicrypt.crysl.reader
+Export-Package: de.cognicrypt.crysl.creator
 Import-Package: org.junit

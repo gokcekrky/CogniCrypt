@@ -27,8 +27,8 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.JavaCore;
 import de.cognicrypt.core.Constants;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
-import de.cognicrypt.crysl.reader.CrySLReaderUtils;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLReaderUtils;
 
 public class CrySLBuilder extends IncrementalProjectBuilder {
 
@@ -54,7 +54,7 @@ public class CrySLBuilder extends IncrementalProjectBuilder {
 				}
 			}
 			for (int i = 0; i < resourcesPaths.size(); i++) {
-				CrySLReaderUtils.storeRulesToFile(csmr.readRulesWithin(resourcesPaths.get(i).toOSString()),
+				CrySLReaderUtils.storeRulesToFile(csmr.readRulesWithin(resourcesPaths.get(i).toOSString(), Activator.PLUGIN_ID),
 						ResourcesPlugin.getWorkspace().getRoot().findMember(outputPaths.get(i)).getLocation().toOSString());
 			}
 		}

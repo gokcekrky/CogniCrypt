@@ -17,17 +17,18 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import crypto.interfaces.ISLConstraint;
-import crypto.rules.CrySLArithmeticConstraint;
-import crypto.rules.CrySLArithmeticConstraint.ArithOp;
-import crypto.rules.CrySLComparisonConstraint;
-import crypto.rules.CrySLComparisonConstraint.CompOp;
-import crypto.rules.CrySLConstraint;
-import crypto.rules.CrySLConstraint.LogOps;
-import crypto.rules.CrySLLiteral;
-import crypto.rules.CrySLRule;
-import crypto.rules.CrySLValueConstraint;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.interfaces.ISLConstraint;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLArithmeticConstraint;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLArithmeticConstraint.ArithOp;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLComparisonConstraint;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLComparisonConstraint.CompOp;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLConstraint;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLConstraint.LogOps;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLLiteral;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRule;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLValueConstraint;
+import de.cognicrypt.crysl.handler.Activator;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
 
 public class ConstraintTests {
 
@@ -35,7 +36,7 @@ public class ConstraintTests {
 
 	@BeforeClass
 	public static void setup() throws MalformedURLException {
-		csmr = new CrySLModelReader();
+		csmr = new CrySLModelReader(Activator.PLUGIN_ID);
 	}
 
 	private CrySLRule readRuleFromFuleName(String ruleName) {

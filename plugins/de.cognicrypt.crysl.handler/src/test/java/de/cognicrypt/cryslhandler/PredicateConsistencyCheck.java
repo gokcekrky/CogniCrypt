@@ -17,15 +17,16 @@ import java.util.List;
 import java.util.Map;
 import org.eclipse.core.runtime.CoreException;
 import org.junit.Test;
-import crypto.rules.CrySLPredicate;
-import crypto.rules.CrySLRule;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLPredicate;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRule;
+import de.cognicrypt.crysl.handler.Activator;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
 
 public class PredicateConsistencyCheck {
 
 	@Test
 	public void predicateParameterNumberConsistencyTest() throws MalformedURLException, CoreException {
-		List<CrySLRule> rules = (new CrySLModelReader()).readRulesOutside("../de.cognicrypt.core/resources/CrySLRules/JavaCryptographicArchitecture");
+		List<CrySLRule> rules = (new CrySLModelReader(Activator.PLUGIN_ID)).readRulesOutside("../de.cognicrypt.core/resources/CrySLRules/JavaCryptographicArchitecture");
 		Map<String, List<PredicateDetails>> predicates = new HashMap<String, List<PredicateDetails>>();
 		for (CrySLRule rule : rules) {
 

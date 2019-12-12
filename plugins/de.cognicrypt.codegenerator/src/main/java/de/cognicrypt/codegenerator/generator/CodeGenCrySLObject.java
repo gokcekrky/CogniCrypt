@@ -10,7 +10,7 @@
 
 package de.cognicrypt.codegenerator.generator;
 
-import crypto.rules.CrySLObject;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLObject;
 
 public class CodeGenCrySLObject extends CrySLObject {
 

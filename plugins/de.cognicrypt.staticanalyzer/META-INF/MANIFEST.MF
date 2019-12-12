@@ -21,6 +21,10 @@ Require-Bundle: org.eclipse.ui,
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
- resources/
+ resources/,
+ lib/CryptoAnalysis.jar,
+ lib/heros.jar,
+ lib/slf4j-api.jar
 Automatic-Module-Name: de.cognicrypt.staticanalyzer
 Import-Package: org.eclipse.ui.texteditor
+ 

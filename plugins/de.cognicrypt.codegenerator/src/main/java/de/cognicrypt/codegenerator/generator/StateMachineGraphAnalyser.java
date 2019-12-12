@@ -13,9 +13,9 @@ package de.cognicrypt.codegenerator.generator;
 import java.util.ArrayList;
 import java.util.List;
 
-import crypto.rules.StateMachineGraph;
-import crypto.rules.StateNode;
-import crypto.rules.TransitionEdge;
+import de.darmstadt.tu.crossing.crysl.rules.StateMachineGraph;
+import de.darmstadt.tu.crossing.crysl.rules.StateNode;
+import de.darmstadt.tu.crossing.crysl.rules.TransitionEdge;
 import de.cognicrypt.utils.Utils;
 
 /**

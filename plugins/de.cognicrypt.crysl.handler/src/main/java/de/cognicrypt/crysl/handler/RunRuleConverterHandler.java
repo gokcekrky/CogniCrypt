@@ -16,7 +16,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.darmstadt.tu.crossing.crysl.reader.CrySLModelReader;
 import de.cognicrypt.utils.Utils;
 
 public class RunRuleConverterHandler extends AbstractHandler {

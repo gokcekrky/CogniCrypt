@@ -14,13 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import crypto.interfaces.ISLConstraint;
-import crypto.rules.CrySLForbiddenMethod;
-import crypto.rules.CrySLMethod;
-import crypto.rules.CrySLObject;
-import crypto.rules.CrySLPredicate;
-import crypto.rules.CrySLRule;
-import crypto.rules.StateMachineGraph;
+import de.darmstadt.tu.crossing.crysl.interfaces.ISLConstraint;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLForbiddenMethod;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLMethod;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLObject;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLPredicate;
+import de.darmstadt.tu.crossing.crysl.rules.CrySLRule;
+import de.darmstadt.tu.crossing.crysl.rules.StateMachineGraph;
 
 public class CodeGenCrySLRule extends CrySLRule {
 
