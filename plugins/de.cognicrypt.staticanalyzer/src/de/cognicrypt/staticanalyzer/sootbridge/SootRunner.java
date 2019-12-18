@@ -42,10 +42,10 @@ import boomerang.callgraph.ObservableICFG;
 import boomerang.preanalysis.BoomerangPretransformer;
 import crypto.analysis.CrySLRulesetSelector.RuleFormat;
 import crypto.analysis.CryptoScanner;
-import crypto.rules.CrySLRule;
-import crypto.rules.CrySLRuleReader;
+import de.darmstadt.tu.crossing.rules.CrySLRule;
+import de.darmstadt.tu.crossing.rules.CrySLRuleReader;
 import de.cognicrypt.core.Constants;
-import de.cognicrypt.crysl.reader.CrySLModelReader;
+import de.cognicrypt.crysl.reader.CrySLPluginModelReader;
 import de.cognicrypt.staticanalyzer.Activator;
 import de.cognicrypt.staticanalyzer.results.ResultsCCUIListener;
 import de.cognicrypt.staticanalyzer.utilities.Ruleset;
@@ -98,7 +98,7 @@ public class SootRunner {
  		IPreferenceStore prefStore = Activator.getDefault().getPreferenceStore();
  		
 		try {
-			CrySLModelReader r = new CrySLModelReader(project);
+			CrySLPluginModelReader r = new CrySLPluginModelReader(project);
 			for (String path : projectClassPath(JavaCore.create(project))) {
 				List<CrySLRule> readRuleFromBinaryFiles = r.readRulesOutside(path);
 				readRuleFromBinaryFiles.stream().forEach(e -> System.out.println(e.getClassName()));

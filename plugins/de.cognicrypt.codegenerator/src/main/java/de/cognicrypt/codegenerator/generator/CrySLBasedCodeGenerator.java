@@ -55,20 +55,20 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
-import crypto.interfaces.ICrySLPredicateParameter;
-import crypto.interfaces.ISLConstraint;
-import crypto.rules.CrySLComparisonConstraint;
-import crypto.rules.CrySLCondPredicate;
-import crypto.rules.CrySLConstraint;
-import crypto.rules.CrySLConstraint.LogOps;
-import crypto.rules.CrySLMethod;
-import crypto.rules.CrySLObject;
-import crypto.rules.CrySLPredicate;
-import crypto.rules.CrySLRule;
-import crypto.rules.CrySLValueConstraint;
-import crypto.rules.StateMachineGraph;
-import crypto.rules.StateNode;
-import crypto.rules.TransitionEdge;
+import de.darmstadt.tu.crossing.interfaces.ICrySLPredicateParameter;
+import de.darmstadt.tu.crossing.interfaces.ISLConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLComparisonConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLCondPredicate;
+import de.darmstadt.tu.crossing.rules.CrySLConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLConstraint.LogOps;
+import de.darmstadt.tu.crossing.rules.CrySLMethod;
+import de.darmstadt.tu.crossing.rules.CrySLObject;
+import de.darmstadt.tu.crossing.rules.CrySLPredicate;
+import de.darmstadt.tu.crossing.rules.CrySLRule;
+import de.darmstadt.tu.crossing.rules.CrySLValueConstraint;
+import de.darmstadt.tu.crossing.rules.StateMachineGraph;
+import de.darmstadt.tu.crossing.rules.StateNode;
+import de.darmstadt.tu.crossing.rules.TransitionEdge;
 import de.cognicrypt.codegenerator.Activator;
 import de.cognicrypt.codegenerator.wizard.Configuration;
 import de.cognicrypt.codegenerator.wizard.CrySLConfiguration;
@@ -308,7 +308,7 @@ public class CrySLBasedCodeGenerator extends CodeGenerator {
 							mayUsePreds.put(entry.getKey(), entry.getValue());
 						}
 					}
-
+					
 					ArrayList<String> methodInvocations = generateMethodInvocations(rule, method, currentTransitions, mayUsePreds, imports, lastRule);
 					if (methodInvocations.isEmpty()) {
 						continue;

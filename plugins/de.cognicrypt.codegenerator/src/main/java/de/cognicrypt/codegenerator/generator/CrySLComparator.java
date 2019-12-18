@@ -12,7 +12,7 @@ package de.cognicrypt.codegenerator.generator;
 
 import java.util.Comparator;
 
-import crypto.rules.CrySLRule;
+import de.darmstadt.tu.crossing.rules.CrySLRule;
 import de.cognicrypt.utils.Utils;
 
 public class CrySLComparator implements Comparator<CrySLRule> {
