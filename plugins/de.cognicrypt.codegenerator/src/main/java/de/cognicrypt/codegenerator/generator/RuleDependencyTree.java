@@ -23,9 +23,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import crypto.rules.CrySLObject;
-import crypto.rules.CrySLPredicate;
-import crypto.rules.CrySLRule;
+import de.darmstadt.tu.crossing.rules.CrySLObject;
+import de.darmstadt.tu.crossing.rules.CrySLPredicate;
+import de.darmstadt.tu.crossing.rules.CrySLRule;
 import de.cognicrypt.utils.Utils;
 
 public class RuleDependencyTree {

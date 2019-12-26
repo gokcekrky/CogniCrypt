@@ -47,26 +47,26 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 import com.google.inject.Injector;
 
-import crypto.interfaces.ICrySLPredicateParameter;
-import crypto.interfaces.ISLConstraint;
-import crypto.rules.CrySLArithmeticConstraint;
-import crypto.rules.CrySLArithmeticConstraint.ArithOp;
-import crypto.rules.CrySLComparisonConstraint;
-import crypto.rules.CrySLComparisonConstraint.CompOp;
-import crypto.rules.CrySLCondPredicate;
-import crypto.rules.CrySLConstraint;
-import crypto.rules.CrySLConstraint.LogOps;
-import crypto.rules.CrySLForbiddenMethod;
-import crypto.rules.CrySLMethod;
-import crypto.rules.CrySLObject;
-import crypto.rules.CrySLPredicate;
-import crypto.rules.CrySLRule;
-import crypto.rules.CrySLSplitter;
-import crypto.rules.CrySLValueConstraint;
-import crypto.rules.ParEqualsPredicate;
-import crypto.rules.StateMachineGraph;
-import crypto.rules.StateNode;
-import crypto.rules.TransitionEdge;
+import de.darmstadt.tu.crossing.interfaces.ICrySLPredicateParameter;
+import de.darmstadt.tu.crossing.interfaces.ISLConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLArithmeticConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLArithmeticConstraint.ArithOp;
+import de.darmstadt.tu.crossing.rules.CrySLComparisonConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLComparisonConstraint.CompOp;
+import de.darmstadt.tu.crossing.rules.CrySLCondPredicate;
+import de.darmstadt.tu.crossing.rules.CrySLConstraint;
+import de.darmstadt.tu.crossing.rules.CrySLConstraint.LogOps;
+import de.darmstadt.tu.crossing.rules.CrySLForbiddenMethod;
+import de.darmstadt.tu.crossing.rules.CrySLMethod;
+import de.darmstadt.tu.crossing.rules.CrySLObject;
+import de.darmstadt.tu.crossing.rules.CrySLPredicate;
+import de.darmstadt.tu.crossing.rules.CrySLRule;
+import de.darmstadt.tu.crossing.rules.CrySLSplitter;
+import de.darmstadt.tu.crossing.rules.CrySLValueConstraint;
+import de.darmstadt.tu.crossing.rules.ParEqualsPredicate;
+import de.darmstadt.tu.crossing.rules.StateMachineGraph;
+import de.darmstadt.tu.crossing.rules.StateNode;
+import de.darmstadt.tu.crossing.rules.TransitionEdge;
 import de.cognicrypt.core.Constants;
 import de.cognicrypt.crysl.handler.Activator;
 import de.cognicrypt.utils.Utils;
@@ -396,7 +396,7 @@ public class CrySLModelReader {
 			}
 		}
 
-		return new CrySLArithmeticConstraint(name, new CrySLObject("0", INT), crypto.rules.CrySLArithmeticConstraint.ArithOp.p);
+		return new CrySLArithmeticConstraint(name, new CrySLObject("0", INT), de.darmstadt.tu.crossing.rules.CrySLArithmeticConstraint.ArithOp.p);
 	}
 
 	private ISLConstraint getConstraint(final Constraint cons) {
